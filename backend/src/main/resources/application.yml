@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: dsms-backend
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/dsms?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USERNAME:dsms}
+    password: ${DB_PASSWORD:dsms}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+
+app:
+  auth:
+    jwt-secret: ${JWT_SECRET:development-secret-change-before-production-123456}
+    access-token-minutes: 15
+    refresh-token-days: 30
+    verification-token-hours: 24
+    expose-verification-token: ${EXPOSE_VERIFICATION_TOKEN:true}
+    secure-cookie: ${SECURE_COOKIE:false}
+  bootstrap-admin:
+    enabled: ${BOOTSTRAP_ADMIN_ENABLED:false}
+    email: ${ADMIN_EMAIL:admin@dsms.local}
+    password: ${ADMIN_PASSWORD:Admin1234}
+    first-name: ${ADMIN_FIRST_NAME:System}
+    last-name: ${ADMIN_LAST_NAME:Administrator}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

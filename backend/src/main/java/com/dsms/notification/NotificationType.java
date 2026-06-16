@@ -1,0 +1,12 @@
+package com.dsms.notification;
+
+public enum NotificationType {
+    BOOKING_CONFIRMED,
+    WAITLIST_JOINED,
+    WAITLIST_PROMOTED,
+    RESERVATION_CANCELLED,
+    PASS_ORDER_CREATED,
+    PASS_ORDER_PAID,
+    PASS_ORDER_CANCELLED,
+    PASS_GRANTED
+}

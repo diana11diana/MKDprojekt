@@ -1,0 +1,43 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-dsms}
+      MYSQL_USER: ${MYSQL_USER:-dsms}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dsms}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-dsms}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: ${MYSQL_USER:-dsms}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-dsms}
+      JWT_SECRET: ${JWT_SECRET:-development-secret-change-before-production}
+      BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@dsms.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin1234}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:

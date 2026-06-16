@@ -1,0 +1,50 @@
+body {
+  margin: 0;
+}
+
+.hero {
+  background:
+    radial-gradient(circle at 75% 35%, rgba(224, 108, 159, 0.28), transparent 30%),
+    linear-gradient(135deg, #17131f 0%, #31203d 55%, #5e315c 100%);
+  color: white;
+  padding: 96px 0 112px;
+}
+
+.hero-title {
+  font-size: clamp(3.5rem, 9vw, 7.5rem) !important;
+  line-height: 0.95 !important;
+  max-width: 820px;
+  margin-top: 12px !important;
+}
+
+.hero-copy {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1.15rem !important;
+  line-height: 1.7 !important;
+  max-width: 580px;
+  margin-top: 28px !important;
+}
+
+.class-card {
+  height: 100%;
+  border-color: rgba(49, 32, 61, 0.1) !important;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.class-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 45px rgba(49, 32, 61, 0.12);
+}
+
+.auth-background {
+  min-height: calc(100vh - 64px);
+  padding: 72px 0;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(224, 108, 159, 0.18), transparent 30%),
+    linear-gradient(180deg, #fbf8fc, #f2eaf5);
+}
+
+.auth-card {
+  padding: clamp(28px, 6vw, 56px);
+  border: 1px solid rgba(49, 32, 61, 0.09);
+}
