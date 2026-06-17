@@ -24,12 +24,13 @@ import { useAuth } from './auth-context'
 import { LoginPage, RegisterPage } from './AuthPage'
 import ProfilePage from './ProfilePage'
 import AdminPage from './AdminPage'
+import InstructorPage from './InstructorPage'
 
 const levelLabels = {
-  BEGINNER: 'Начинающий',
-  INTERMEDIATE: 'Средний',
-  ADVANCED: 'Продвинутый',
-  ALL: 'Все уровни',
+  BEGINNER: 'Początkujący',
+  INTERMEDIATE: 'Średniozaawansowany',
+  ADVANCED: 'Zaawansowany',
+  ALL: 'Wszystkie poziomy',
 }
 
 function Header() {
@@ -50,7 +51,10 @@ function Header() {
         {user ? (
           <Stack direction="row" spacing={1}>
             {user.role === 'ADMIN' && (
-              <Button component={RouterLink} to="/admin" color="inherit">Админ-панель</Button>
+              <Button component={RouterLink} to="/admin" color="inherit">Panel administratora</Button>
+            )}
+            {['INSTRUCTOR', 'ADMIN'].includes(user.role) && (
+              <Button component={RouterLink} to="/instructor" color="inherit">Panel instruktora</Button>
             )}
             <Button component={RouterLink} to="/profile" variant="contained">
               {user.firstName}
@@ -58,9 +62,9 @@ function Header() {
           </Stack>
         ) : (
           <>
-            <Button component={RouterLink} to="/login" color="inherit">Войти</Button>
+            <Button component={RouterLink} to="/login" color="inherit">Zaloguj się</Button>
             <Button component={RouterLink} to="/register" variant="contained">
-              Регистрация
+              Rejestracja
             </Button>
           </>
         )}
@@ -70,7 +74,7 @@ function Header() {
 }
 
 function ClassCard({ item, onBook, busy }) {
-  const date = new Intl.DateTimeFormat('ru-RU', {
+  const date = new Intl.DateTimeFormat('pl-PL', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -95,17 +99,17 @@ function ClassCard({ item, onBook, busy }) {
         <Stack spacing={1} sx={{ mt: 2 }}>
           <Stack direction="row" spacing={1} alignItems="center">
             <AccessTimeRoundedIcon fontSize="small" />
-            <Typography variant="body2">{date}, {item.durationMinutes} мин.</Typography>
+            <Typography variant="body2">{date}, {item.durationMinutes} min</Typography>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
             <GroupsRoundedIcon fontSize="small" />
             <Typography variant="body2">
-              Свободно {item.availablePlaces} из {item.capacity}
+              Wolnych {item.availablePlaces} z {item.capacity}
             </Typography>
           </Stack>
         </Stack>
         <Button fullWidth variant="contained" sx={{ mt: 3 }} onClick={() => onBook(item)} disabled={busy}>
-          {item.availablePlaces > 0 ? 'Записаться' : 'Встать в лист ожидания'}
+          {item.availablePlaces > 0 ? 'Zarezerwuj miejsce' : 'Dołącz do listy oczekujących'}
         </Button>
       </CardContent>
     </Card>
@@ -126,7 +130,7 @@ function HomePage() {
     setLoading(true)
     return fetchClasses()
       .then(setClasses)
-      .catch(() => setError('Не удалось загрузить расписание. Проверьте backend.'))
+      .catch(() => setError('Nie udało się załadować grafiku. Sprawdź backend.'))
       .finally(() => setLoading(false))
   }
 
@@ -142,18 +146,18 @@ function HomePage() {
       return
     }
     if (user.role !== 'CLIENT') {
-      setError('Запись доступна только клиентам школы.')
+      setError('Rezerwacja jest dostępna tylko dla klientów szkoły.')
       return
     }
     setBookingId(item.id)
     try {
       const result = await bookClass(item.id)
       setMessage(result.result === 'CONFIRMED'
-        ? 'Вы записаны на занятие. Абонемент зарезервирован.'
-        : `Свободных мест нет, вы в листе ожидания под номером ${result.queuePosition}.`)
+        ? 'Zapisano Cię na zajęcia. Karnet został zarezerwowany.'
+        : `Brak wolnych miejsc, jesteś na liście oczekujących na pozycji ${result.queuePosition}.`)
       await loadClasses()
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось записаться на занятие'))
+      setError(getApiError(requestError, 'Nie udało się zapisać na zajęcia'))
     } finally {
       setBookingId(null)
     }
@@ -172,11 +176,11 @@ function HomePage() {
       <Box className="hero">
         <Container maxWidth="lg">
           <Typography variant="overline" color="secondary.main">
-            Школа танцев в Варшаве
+            Szkoła tańca w Warszawie
           </Typography>
-          <Typography variant="h1" className="hero-title">Найди свой ритм</Typography>
+          <Typography variant="h1" className="hero-title">Znajdź swój rytm</Typography>
           <Typography className="hero-copy">
-            Выбирай направление, знакомься с преподавателями и бронируй занятие онлайн.
+            Wybierz styl, poznaj instruktorów i rezerwuj zajęcia online.
           </Typography>
         </Container>
       </Box>
@@ -191,18 +195,18 @@ function HomePage() {
         >
           <Box>
             <Typography variant="h2" fontSize={{ xs: 36, md: 48 }}>
-              Ближайшие занятия
+              Najbliższe zajęcia
             </Typography>
-            <Typography color="text.secondary">Живое расписание школы</Typography>
+            <Typography color="text.secondary">Aktualny grafik szkoły</Typography>
           </Box>
           <TextField
             select
-            label="Направление"
+            label="Styl"
             value={style}
             onChange={(event) => setStyle(event.target.value)}
             sx={{ minWidth: 220 }}
           >
-            <MenuItem value="">Все направления</MenuItem>
+            <MenuItem value="">Wszystkie style</MenuItem>
             {styles.map((item) => <MenuItem key={item} value={item}>{item}</MenuItem>)}
           </TextField>
         </Stack>
@@ -234,6 +238,7 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/instructor" element={<InstructorPage />} />
       </Routes>
     </>
   )

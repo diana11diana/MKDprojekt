@@ -1,41 +1,40 @@
-# DSMS: открытые решения
+# DSMS: otwarte decyzje
 
-Эти вопросы не блокируют начало архитектурного проектирования. До реализации
-соответствующего модуля приняты допущения из анализа требований.
+Te kwestie nie blokują rozpoczęcia projektowania architektury. Do momentu
+wdrożenia odpowiedniego modułu obowiązują założenia przyjęte w analizie wymagań.
 
-| ID | Вопрос | Текущее допущение |
+| ID | Pytanie | Aktualne założenie |
 |---|---|---|
-| D-01 | Сколько филиалов должна поддерживать система? | Один филиал |
-| D-02 | На каких языках нужен интерфейс? | Только русский |
-| D-03 | Какая валюта используется? | PLN |
-| D-04 | Какой срок бесплатной отмены брони? | 12 часов |
-| D-05 | Сгорает ли посещение при неявке? | Да |
-| D-06 | Может ли клиент оплатить одно занятие без абонемента? | Нет |
-| D-07 | Может ли администратор вручную корректировать остаток посещений? | Да, с аудитом |
-| D-08 | Какие ограничения есть у безлимитного абонемента? | Только срок действия |
-| D-09 | Нужна ли модерация отзывов до публикации? | Нет, доступно скрытие |
-| D-10 | Что представляют собой мероприятия? | Разовые платные события |
-| D-11 | Нужен ли возврат денег через интерфейс? | В MVP только ручная обработка |
-| D-12 | Где будет размещена production-система? | Решение не принято |
-| D-13 | Какой SMTP-провайдер будет использоваться? | Решение не принято |
-| D-14 | Нужен ли фирменный дизайн или достаточно Material UI? | Material UI с базовой темой |
-| D-15 | Нужен ли импорт существующих клиентов? | Не входит в MVP |
+| D-01 | Ile oddziałów ma obsługiwać system? | Jeden oddział |
+| D-02 | W jakim języku ma działać interfejs? | Tylko polski |
+| D-03 | Jakiej waluty używamy? | PLN |
+| D-04 | Jaki jest czas bezpłatnej anulacji rezerwacji? | 12 godzin |
+| D-05 | Czy wejście przepada przy nieobecności? | Tak |
+| D-06 | Czy klient może opłacić pojedyncze zajęcia bez karnetu? | Nie |
+| D-07 | Czy administrator może ręcznie korygować liczbę pozostałych wejść? | Tak, z audytem |
+| D-08 | Jakie ograniczenia ma karnet bez limitu? | Tylko okres ważności |
+| D-09 | Czy opinie wymagają moderacji przed publikacją? | Nie, dostępne jest ukrywanie |
+| D-10 | Czym są wydarzenia? | Jednorazowe płatne wydarzenia |
+| D-11 | Czy zwroty pieniędzy mają być dostępne w interfejsie? | W MVP tylko obsługa ręczna |
+| D-12 | Gdzie będzie hostowany system production? | Decyzja jeszcze nie została podjęta |
+| D-13 | Jaki dostawca SMTP zostanie użyty? | Decyzja jeszcze nie została podjęta |
+| D-14 | Czy potrzebny jest branding, czy wystarczy Material UI? | Material UI z podstawowym motywem |
+| D-15 | Czy potrzebny jest import istniejących klientów? | Poza zakresem MVP |
 
-## Решения, необходимые до интеграций
+## Decyzje potrzebne przed integracjami
 
-Перед интеграцией PayU потребуются:
+Przed integracją PayU będą potrzebne:
 
-- merchant account и sandbox-данные;
-- список разрешенных способов оплаты;
-- правила возврата средств;
-- публичные URL для callback после развертывания.
+- konto merchant i dane sandbox;
+- lista dozwolonych metod płatności;
+- zasady zwrotów;
+- publiczne URL-e dla callbacków po wdrożeniu.
 
-Перед production-релизом потребуются:
+Przed wydaniem production będą potrzebne:
 
-- доменное имя;
-- хостинг и схема развертывания;
-- SMTP-провайдер;
-- S3-совместимое файловое хранилище;
-- политика хранения персональных данных и журналов;
-- реквизиты и тексты пользовательских соглашений.
-
+- nazwa domeny;
+- hosting i sposób wdrożenia;
+- dostawca SMTP;
+- magazyn plików zgodny z S3;
+- polityka przechowywania danych osobowych i logów;
+- dane firmowe oraz treści regulaminów użytkownika.

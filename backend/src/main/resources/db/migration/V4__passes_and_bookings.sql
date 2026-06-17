@@ -72,7 +72,6 @@ CREATE TABLE pass_ledger_entries (
 INSERT INTO pass_types
     (name, description, type, visit_count, validity_days, price, currency, active)
 VALUES
-    ('4 занятия', 'Абонемент для знакомства со школой', 'LIMITED', 4, 30, 160.00, 'PLN', TRUE),
-    ('8 занятий', 'Регулярные занятия в течение месяца', 'LIMITED', 8, 45, 280.00, 'PLN', TRUE),
-    ('Безлимит 30', 'Неограниченное количество занятий на 30 дней', 'UNLIMITED', NULL, 30, 390.00, 'PLN', TRUE);
-
+    ('4 wejścia', 'Karnet na start w szkole', 'LIMITED', 4, 30, 160.00, 'PLN', TRUE),
+    ('8 wejść', 'Regularne zajęcia w ciągu miesiąca', 'LIMITED', 8, 45, 280.00, 'PLN', TRUE),
+    ('Bez limitu 30', 'Nielimitowana liczba zajęć przez 30 dni', 'UNLIMITED', NULL, 30, 390.00, 'PLN', TRUE);

@@ -88,8 +88,8 @@ public class PassService {
         notificationService.notify(
                 user,
                 NotificationType.PASS_GRANTED,
-                "Абонемент выдан",
-                "Администратор выдал вам абонемент \"" + passType.getName() + "\"."
+                "Karnet przyznany",
+                "Administrator przyznał Ci karnet \"" + passType.getName() + "\"."
         );
         return UserPassResponse.from(pass);
     }

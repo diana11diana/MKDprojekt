@@ -12,6 +12,7 @@ import {
   Divider,
   Grid,
   Paper,
+  Rating,
   Stack,
   TextField,
   Typography,
@@ -21,9 +22,11 @@ import {
   cancelMyReservation,
   cancelMyPassOrder,
   createMyPassOrder,
+  createMyReview,
   fetchMyNotifications,
   fetchMyPassOrders,
   fetchMyPasses,
+  fetchMyReviews,
   fetchPassTypes,
   fetchMyReservations,
   fetchMyWaitlist,
@@ -32,6 +35,56 @@ import {
   markNotificationRead,
 } from './api'
 import { useAuth } from './auth-context'
+
+const roleLabels = {
+  CLIENT: 'Klient',
+  INSTRUCTOR: 'Instruktor',
+  ADMIN: 'Administrator',
+}
+
+const passStatusLabels = {
+  ACTIVE: 'Aktywny',
+  EXPIRED: 'Wygasły',
+  EXHAUSTED: 'Wykorzystany',
+  CANCELLED: 'Anulowany',
+}
+
+const orderStatusLabels = {
+  PENDING_PAYMENT: 'Oczekuje na płatność',
+  PAID: 'Opłacone',
+  CANCELLED: 'Anulowane',
+}
+
+const replyRoleLabels = {
+  INSTRUCTOR: 'Instruktor',
+  ADMIN: 'Administrator',
+}
+
+function formatDateTime(value) {
+  return new Date(value).toLocaleString('pl-PL')
+}
+
+function ReviewReplies({ replies }) {
+  if (!replies?.length) {
+    return null
+  }
+
+  return (
+    <Stack spacing={1.25} sx={{ mt: 2 }}>
+      {replies.map((reply) => (
+        <Paper key={reply.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'rgba(179, 136, 103, 0.05)' }}>
+          <Typography fontWeight={700}>
+            {replyRoleLabels[reply.authorRole] || reply.authorRole}: {reply.authorName}
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 0.75 }}>{reply.body}</Typography>
+          <Typography color="text.secondary" variant="caption" sx={{ mt: 0.75, display: 'block' }}>
+            {formatDateTime(reply.createdAt)}
+          </Typography>
+        </Paper>
+      ))}
+    </Stack>
+  )
+}
 
 export default function ProfilePage() {
   const { user, initializing, logout, updateProfile } = useAuth()
@@ -47,6 +100,8 @@ export default function ProfilePage() {
   const [notifications, setNotifications] = useState([])
   const [reservations, setReservations] = useState([])
   const [waitlist, setWaitlist] = useState([])
+  const [reviews, setReviews] = useState([])
+  const [reviewDrafts, setReviewDrafts] = useState({})
   const [bookingLoading, setBookingLoading] = useState(false)
 
   const loadBookings = useCallback(async () => {
@@ -64,7 +119,7 @@ export default function ProfilePage() {
       setReservations(reservationData)
       setWaitlist(waitlistData)
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось загрузить записи и абонементы'))
+      setError(getApiError(requestError, 'Nie udało się załadować rezerwacji i karnetów'))
     } finally {
       setBookingLoading(false)
     }
@@ -84,7 +139,19 @@ export default function ProfilePage() {
       setOrders(ordersData)
       setNotifications(notificationsData)
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось загрузить покупки и уведомления'))
+      setError(getApiError(requestError, 'Nie udało się załadować zakupów i powiadomień'))
+    }
+  }, [user])
+
+  const loadReviews = useCallback(async () => {
+    if (!user || user.role !== 'CLIENT') {
+      return
+    }
+    try {
+      const reviewData = await fetchMyReviews()
+      setReviews(reviewData)
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Nie udało się załadować opinii'))
     }
   }, [user])
 
@@ -106,6 +173,10 @@ export default function ProfilePage() {
     loadShop()
   }, [loadShop])
 
+  useEffect(() => {
+    loadReviews()
+  }, [loadReviews])
+
   if (initializing) {
     return <Box textAlign="center" py={12}><CircularProgress /></Box>
   }
@@ -122,9 +193,9 @@ export default function ProfilePage() {
     setSaving(true)
     try {
       await updateProfile(form)
-      setMessage('Профиль сохранён')
+      setMessage('Profil zapisany')
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось сохранить профиль'))
+      setError(getApiError(requestError, 'Nie udało się zapisać profilu'))
     } finally {
       setSaving(false)
     }
@@ -140,10 +211,10 @@ export default function ProfilePage() {
     setMessage('')
     try {
       await cancelMyReservation(classId)
-      setMessage('Запись отменена')
+      setMessage('Rezerwacja anulowana')
       await loadBookings()
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось отменить запись'))
+      setError(getApiError(requestError, 'Nie udało się anulować rezerwacji'))
     }
   }
 
@@ -152,10 +223,10 @@ export default function ProfilePage() {
     setMessage('')
     try {
       await leaveMyWaitlist(classId)
-      setMessage('Вы вышли из листа ожидания')
+      setMessage('Opuściłeś listę oczekujących')
       await loadBookings()
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось выйти из листа ожидания'))
+      setError(getApiError(requestError, 'Nie udało się opuścić listy oczekujących'))
     }
   }
 
@@ -164,10 +235,10 @@ export default function ProfilePage() {
     setMessage('')
     try {
       await createMyPassOrder(passTypeId)
-      setMessage('Заказ создан. Администратор подтвердит оплату после получения платежа.')
+      setMessage('Zamówienie utworzone. Administrator potwierdzi płatność po jej otrzymaniu.')
       await loadShop()
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось создать заказ'))
+      setError(getApiError(requestError, 'Nie udało się utworzyć zamówienia'))
     }
   }
 
@@ -176,10 +247,10 @@ export default function ProfilePage() {
     setMessage('')
     try {
       await cancelMyPassOrder(id)
-      setMessage('Заказ отменён')
+      setMessage('Zamówienie anulowane')
       await loadShop()
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось отменить заказ'))
+      setError(getApiError(requestError, 'Nie udało się anulować zamówienia'))
     }
   }
 
@@ -189,9 +260,51 @@ export default function ProfilePage() {
       setNotifications((current) =>
         current.map((item) => item.id === id ? updated : item))
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось обновить уведомление'))
+      setError(getApiError(requestError, 'Nie udało się zaktualizować powiadomienia'))
     }
   }
+
+  const changeReviewDraft = (classId, field, value) => {
+    setReviewDrafts((current) => ({
+      ...current,
+      [classId]: {
+        rating: current[classId]?.rating || 0,
+        comment: current[classId]?.comment || '',
+        [field]: value,
+      },
+    }))
+  }
+
+  const createReview = async (classId) => {
+    const draft = reviewDrafts[classId] || { rating: 0, comment: '' }
+    if (!draft.rating) {
+      setError('Wybierz ocenę od 1 do 5.')
+      return
+    }
+    setError('')
+    setMessage('')
+    try {
+      await createMyReview({
+        classId,
+        rating: draft.rating,
+        comment: draft.comment,
+      })
+      setMessage('Opinia została zapisana.')
+      setReviewDrafts((current) => {
+        const next = { ...current }
+        delete next[classId]
+        return next
+      })
+      await loadReviews()
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Nie udało się zapisać opinii'))
+    }
+  }
+
+  const completedReservations = reservations.filter((item) =>
+    ['CONFIRMED', 'ATTENDED'].includes(item.status) && new Date(item.startAt).getTime() < Date.now())
+  const reviewedClassIds = new Set(reviews.map((item) => item.classId))
+  const pendingReviews = completedReservations.filter((item) => !reviewedClassIds.has(item.classId))
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
@@ -203,13 +316,13 @@ export default function ProfilePage() {
           <Box flex={1} textAlign={{ xs: 'center', sm: 'left' }}>
             <Typography variant="h3">{user.firstName} {user.lastName}</Typography>
             <Typography color="text.secondary" sx={{ mt: 1 }}>{user.email}</Typography>
-            <Typography variant="overline" color="primary.main">{user.role}</Typography>
+            <Typography variant="overline" color="primary.main">{roleLabels[user.role] || user.role}</Typography>
           </Box>
-          <Button variant="outlined" onClick={signOut}>Выйти</Button>
+          <Button variant="outlined" onClick={signOut}>Wyloguj się</Button>
         </Stack>
 
         <Box component="form" onSubmit={save} sx={{ mt: 5 }}>
-          <Typography variant="h5" sx={{ mb: 2 }}>Личные данные</Typography>
+          <Typography variant="h5" sx={{ mb: 2 }}>Dane osobowe</Typography>
           <Stack spacing={2}>
             {message && <Alert severity="success">{message}</Alert>}
             {error && <Alert severity="error">{error}</Alert>}
@@ -217,25 +330,25 @@ export default function ProfilePage() {
               <TextField
                 fullWidth
                 required
-                label="Имя"
+                label="Imię"
                 value={form.firstName}
                 onChange={(event) => setForm({ ...form, firstName: event.target.value })}
               />
               <TextField
                 fullWidth
                 required
-                label="Фамилия"
+                label="Nazwisko"
                 value={form.lastName}
                 onChange={(event) => setForm({ ...form, lastName: event.target.value })}
               />
             </Stack>
             <TextField
-              label="Телефон"
+              label="Telefon"
               value={form.phone}
               onChange={(event) => setForm({ ...form, phone: event.target.value })}
             />
             <Button type="submit" variant="contained" disabled={saving} sx={{ alignSelf: 'start' }}>
-              {saving ? 'Сохранение...' : 'Сохранить'}
+              {saving ? 'Zapisywanie...' : 'Zapisz'}
             </Button>
           </Stack>
         </Box>
@@ -245,8 +358,8 @@ export default function ProfilePage() {
             <Divider sx={{ my: 5 }} />
             <Stack spacing={3}>
               <Box>
-                <Typography variant="h5">Купить абонемент</Typography>
-                <Typography color="text.secondary">Создайте заказ, затем администратор подтвердит оплату.</Typography>
+                <Typography variant="h5">Kup karnet</Typography>
+                <Typography color="text.secondary">Utwórz zamówienie, a administrator potwierdzi płatność.</Typography>
               </Box>
               <Grid container spacing={2}>
                 {passTypes.map((item) => (
@@ -255,11 +368,11 @@ export default function ProfilePage() {
                       <CardContent>
                         <Typography fontWeight={700}>{item.name}</Typography>
                         <Typography color="text.secondary" sx={{ mt: 1 }}>
-                          {item.type === 'UNLIMITED' ? 'Безлимит' : `${item.visitCount} занятий`} · {item.validityDays} дней
+                          {item.type === 'UNLIMITED' ? 'Bez limitu' : `Limit: ${item.visitCount} wejść`} · {item.validityDays} dni
                         </Typography>
                         <Typography variant="h6" sx={{ mt: 1 }}>{item.price} {item.currency}</Typography>
                         <Button fullWidth variant="contained" sx={{ mt: 2 }} onClick={() => buyPass(item.id)}>
-                          Заказать
+                          Zamów
                         </Button>
                       </CardContent>
                     </Card>
@@ -268,7 +381,7 @@ export default function ProfilePage() {
               </Grid>
 
               <Box>
-                <Typography variant="h5">Мои заказы</Typography>
+                <Typography variant="h5">Moje zamówienia</Typography>
               </Box>
               <Stack spacing={1.5}>
                 {orders.map((item) => (
@@ -277,26 +390,26 @@ export default function ProfilePage() {
                       <Box>
                         <Typography fontWeight={700}>{item.passName}</Typography>
                         <Typography color="text.secondary">
-                          {item.amount} {item.currency} · {item.status}
+                          {item.amount} {item.currency} · {orderStatusLabels[item.status] || item.status}
                         </Typography>
                         <Typography variant="body2">
-                          Создан {new Date(item.createdAt).toLocaleString('ru-RU')}
+                          Utworzono {new Date(item.createdAt).toLocaleString('pl-PL')}
                         </Typography>
                       </Box>
                       {item.status === 'PENDING_PAYMENT' && (
                         <Button color="error" onClick={() => cancelOrder(item.id)}>
-                          Отменить заказ
+                          Anuluj zamówienie
                         </Button>
                       )}
                     </Stack>
                   </Paper>
                 ))}
-                {orders.length === 0 && <Typography color="text.secondary">Заказов пока нет.</Typography>}
+                {orders.length === 0 && <Typography color="text.secondary">Brak zamówień.</Typography>}
               </Stack>
 
               <Box>
-                <Typography variant="h5">Мои абонементы</Typography>
-                <Typography color="text.secondary">Активные и использованные пакеты занятий</Typography>
+                <Typography variant="h5">Moje karnety</Typography>
+                <Typography color="text.secondary">Aktywne i wykorzystane pakiety zajęć</Typography>
               </Box>
               {bookingLoading && <CircularProgress size={24} />}
               <Grid container spacing={2}>
@@ -306,26 +419,26 @@ export default function ProfilePage() {
                       <CardContent>
                         <Stack direction="row" justifyContent="space-between" gap={1}>
                           <Typography fontWeight={700}>{item.passName}</Typography>
-                          <Chip size="small" label={item.status} />
+                          <Chip size="small" label={passStatusLabels[item.status] || item.status} />
                         </Stack>
                         <Typography color="text.secondary" sx={{ mt: 1 }}>
-                          {item.type === 'UNLIMITED' ? 'Безлимит' : `Осталось занятий: ${item.remainingVisits}`}
+                          {item.type === 'UNLIMITED' ? 'Bez limitu' : `Pozostało wejść: ${item.remainingVisits}`}
                         </Typography>
                         <Typography variant="body2" sx={{ mt: 1 }}>
-                          До {new Date(item.validUntil).toLocaleDateString('ru-RU')}
+                          Ważny do {new Date(item.validUntil).toLocaleDateString('pl-PL')}
                         </Typography>
                       </CardContent>
                     </Card>
                   </Grid>
                 ))}
                 {!bookingLoading && passes.length === 0 && (
-                  <Grid item xs={12}><Typography color="text.secondary">Абонементов пока нет.</Typography></Grid>
+                  <Grid item xs={12}><Typography color="text.secondary">Brak karnetów.</Typography></Grid>
                 )}
               </Grid>
 
               <Box>
-                <Typography variant="h5">Мои записи</Typography>
-                <Typography color="text.secondary">Отмена позже чем за 12 часов считается поздней и занятие списывается.</Typography>
+                <Typography variant="h5">Moje rezerwacje</Typography>
+                <Typography color="text.secondary">Anulowanie później niż 12 godzin przed zajęciami jest traktowane jako późne i wejście przepada.</Typography>
               </Box>
               <Stack spacing={1.5}>
                 {reservations.map((item) => (
@@ -334,25 +447,89 @@ export default function ProfilePage() {
                       <Box>
                         <Typography fontWeight={700}>{item.classTitle}</Typography>
                         <Typography color="text.secondary">
-                          {new Date(item.startAt).toLocaleString('ru-RU')} · {item.instructorName}
+                          {new Date(item.startAt).toLocaleString('pl-PL')} · {item.instructorName}
                         </Typography>
-                        <Typography variant="body2">Абонемент: {item.passName || 'не указан'}</Typography>
+                        <Typography variant="body2">Karnet: {item.passName || 'nie podano'}</Typography>
                       </Box>
                       {item.status === 'CONFIRMED' && (
                         <Button color="error" onClick={() => cancelReservation(item.classId)}>
-                          Отменить
+                          Anuluj
                         </Button>
                       )}
                     </Stack>
                   </Paper>
                 ))}
                 {!bookingLoading && reservations.length === 0 && (
-                  <Typography color="text.secondary">Активных записей пока нет.</Typography>
+                  <Typography color="text.secondary">Brak aktywnych rezerwacji.</Typography>
                 )}
               </Stack>
 
               <Box>
-                <Typography variant="h5">Лист ожидания</Typography>
+                <Typography variant="h5">Opinie o instruktorach</Typography>
+                <Typography color="text.secondary">Po zakończonych zajęciach możesz ocenić instruktora i dodać komentarz.</Typography>
+              </Box>
+              <Stack spacing={2}>
+                {pendingReviews.map((item) => {
+                  const draft = reviewDrafts[item.classId] || { rating: 0, comment: '' }
+                  return (
+                    <Paper variant="outlined" sx={{ p: 2.5 }} key={`review-form-${item.classId}`}>
+                      <Typography fontWeight={700}>{item.classTitle}</Typography>
+                      <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                        {formatDateTime(item.startAt)} · {item.instructorName}
+                      </Typography>
+                      <Stack spacing={2} sx={{ mt: 2 }}>
+                        <Box>
+                          <Typography variant="body2" sx={{ mb: 0.75 }}>Twoja ocena</Typography>
+                          <Rating
+                            value={draft.rating}
+                            onChange={(_, value) => changeReviewDraft(item.classId, 'rating', value || 0)}
+                          />
+                        </Box>
+                        <TextField
+                          multiline
+                          minRows={3}
+                          label="Komentarz"
+                          value={draft.comment}
+                          onChange={(event) => changeReviewDraft(item.classId, 'comment', event.target.value)}
+                        />
+                        <Button variant="contained" sx={{ alignSelf: 'start' }} onClick={() => createReview(item.classId)}>
+                          Dodaj opinię
+                        </Button>
+                      </Stack>
+                    </Paper>
+                  )
+                })}
+
+                {reviews.map((review) => (
+                  <Paper variant="outlined" sx={{ p: 2.5 }} key={review.id}>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={2}>
+                      <Box>
+                        <Typography fontWeight={700}>{review.classTitle}</Typography>
+                        <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                          Instruktor: {review.instructorName}
+                        </Typography>
+                      </Box>
+                      <Box textAlign={{ sm: 'right' }}>
+                        <Rating value={review.rating} readOnly />
+                        <Typography color="text.secondary" variant="body2">
+                          {formatDateTime(review.createdAt)}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    {review.comment && (
+                      <Typography sx={{ mt: 1.5 }}>{review.comment}</Typography>
+                    )}
+                    <ReviewReplies replies={review.replies} />
+                  </Paper>
+                ))}
+
+                {pendingReviews.length === 0 && reviews.length === 0 && (
+                  <Typography color="text.secondary">Nie masz jeszcze zajęć, które można ocenić.</Typography>
+                )}
+              </Stack>
+
+              <Box>
+                <Typography variant="h5">Lista oczekujących</Typography>
               </Box>
               <Stack spacing={1.5}>
                 {waitlist.map((item) => (
@@ -361,24 +538,24 @@ export default function ProfilePage() {
                       <Box>
                         <Typography fontWeight={700}>{item.classTitle}</Typography>
                         <Typography color="text.secondary">
-                          {new Date(item.startAt).toLocaleString('ru-RU')} · позиция {item.position}
+                          {new Date(item.startAt).toLocaleString('pl-PL')} · pozycja {item.position}
                         </Typography>
                       </Box>
                       {item.status === 'WAITING' && (
                         <Button color="error" onClick={() => leaveWaitlist(item.classId)}>
-                          Выйти из очереди
+                          Opuść listę oczekujących
                         </Button>
                       )}
                     </Stack>
                   </Paper>
                 ))}
                 {!bookingLoading && waitlist.length === 0 && (
-                  <Typography color="text.secondary">В листе ожидания вас нет.</Typography>
+                  <Typography color="text.secondary">Nie jesteś na liście oczekujących.</Typography>
                 )}
               </Stack>
 
               <Box>
-                <Typography variant="h5">Уведомления</Typography>
+                <Typography variant="h5">Powiadomienia</Typography>
               </Box>
               <Stack spacing={1.5}>
                 {notifications.map((item) => (
@@ -388,16 +565,16 @@ export default function ProfilePage() {
                         <Typography fontWeight={700}>{item.title}</Typography>
                         <Typography color="text.secondary">{item.body}</Typography>
                         <Typography variant="body2" sx={{ mt: 0.5 }}>
-                          {new Date(item.createdAt).toLocaleString('ru-RU')}
+                          {new Date(item.createdAt).toLocaleString('pl-PL')}
                         </Typography>
                       </Box>
                       {!item.read && (
-                        <Button onClick={() => readNotification(item.id)}>Прочитано</Button>
+                        <Button onClick={() => readNotification(item.id)}>Oznacz jako przeczytane</Button>
                       )}
                     </Stack>
                   </Paper>
                 ))}
-                {notifications.length === 0 && <Typography color="text.secondary">Уведомлений пока нет.</Typography>}
+                {notifications.length === 0 && <Typography color="text.secondary">Brak powiadomień.</Typography>}
               </Stack>
             </Stack>
           </>

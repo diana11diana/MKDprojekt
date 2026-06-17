@@ -1,29 +1,29 @@
-# DSMS: архитектура системы
+# DSMS: architektura systemu
 
-## 1. Архитектурный стиль
+## 1. Styl architektoniczny
 
-Первая версия строится как модульный монолит:
+Pierwsza wersja jest budowana jako modularny monolit:
 
-- один backend на Java 21 и Spring Boot 3;
-- один frontend на React 18;
-- одна база данных MySQL 8;
-- отдельные внешние сервисы PayU, SMTP и S3/MinIO;
-- развертывание компонентов через Docker Compose.
+- jeden backend oparty o Java 21 i Spring Boot 3;
+- jeden frontend oparty o React 18;
+- jedna baza danych MySQL 8;
+- osobne zewnętrzne usługi PayU, SMTP i S3/MinIO;
+- wdrażanie komponentów przez Docker Compose.
 
-Модульный монолит выбран потому, что он снижает сложность MVP, сохраняет
-транзакционность бронирований и абонементов и не мешает позднее выделить
-платежи или уведомления в отдельные сервисы.
+Modularny monolit został wybrany dlatego, że zmniejsza złożoność MVP, zachowuje
+transakcyjność rezerwacji i karnetów, a jednocześnie nie blokuje późniejszego
+wydzielenia płatności lub powiadomień do osobnych usług.
 
-## 2. Контекст системы
+## 2. Kontekst systemu
 
 ```mermaid
 flowchart LR
-    Guest[Гость]
-    Client[Клиент]
-    Instructor[Инструктор]
-    Admin[Администратор]
-    Web[React Web App]
-    API[Spring Boot REST API]
+    Guest[Gość]
+    Client[Klient]
+    Instructor[Instruktor]
+    Admin[Administrator]
+    Web[Aplikacja Web React]
+    API[REST API Spring Boot]
     DB[(MySQL 8)]
     PayU[PayU / BLIK]
     Mail[SMTP]
@@ -36,92 +36,91 @@ flowchart LR
     Web -->|HTTPS / JSON| API
     API --> DB
     API -->|REST| PayU
-    PayU -->|Signed callback| API
+    PayU -->|Podpisany callback| API
     API -->|SMTP| Mail
-    API -->|S3 API| Storage
+    API -->|API S3| Storage
 ```
 
-## 3. Backend-модули
+## 3. Moduły backendu
 
-| Модуль | Ответственность |
+| Moduł | Odpowiedzialność |
 |---|---|
-| `auth` | регистрация, подтверждение email, вход, JWT, refresh token, восстановление пароля |
-| `user` | профили, роли, блокировки, фотографии, управление пользователями |
-| `catalog` | направления, уровни и данные инструкторов |
-| `schedule` | занятия, публикация, отмена и просмотр расписания |
-| `booking` | бронирования, лист ожидания, продвижение очереди |
-| `membership` | типы абонементов, пользовательские абонементы, журнал посещений |
-| `payment` | заказы, платежи, PayU, обработка callback |
-| `attendance` | отметки присутствия и отсутствия |
-| `review` | оценки, отзывы и скрытие отзывов |
-| `event` | разовые мероприятия и управление ими |
-| `notification` | email outbox, шаблоны, плановые напоминания и повторные отправки |
-| `reporting` | агрегаты, отчеты и экспорт CSV |
-| `audit` | аудит административных и критичных операций |
-| `shared` | ошибки, базовые типы, конфигурация и общая инфраструктура |
+| `auth` | rejestracja, potwierdzenie email, logowanie, JWT, refresh token, reset hasła |
+| `user` | profile, role, blokady, zdjęcia, zarządzanie użytkownikami |
+| `catalog` | style, poziomy i dane instruktorów |
+| `schedule` | zajęcia, publikacja, anulowanie i przegląd grafiku |
+| `booking` | rezerwacje, lista oczekujących, przesuwanie kolejki |
+| `membership` | typy karnetów, karnety użytkowników, rejestr wejść |
+| `payment` | zamówienia, płatności, PayU, obsługa callbacków |
+| `attendance` | oznaczanie obecności i nieobecności |
+| `review` | oceny, opinie i ukrywanie opinii |
+| `event` | jednorazowe wydarzenia i zarządzanie nimi |
+| `notification` | email outbox, szablony, przypomnienia planowane i ponowne wysyłki |
+| `reporting` | agregaty, raporty i eksport CSV |
+| `audit` | audyt operacji administracyjnych i krytycznych |
+| `shared` | błędy, typy bazowe, konfiguracja i wspólna infrastruktura |
 
-Модули не обращаются напрямую к внутренним классам соседнего модуля. Для
-взаимодействия используются публичные application-сервисы и доменные события.
+Moduły nie odwołują się bezpośrednio do wewnętrznych klas sąsiednich modułów.
+Do współpracy służą publiczne serwisy aplikacyjne i zdarzenia domenowe.
 
-## 4. Слои backend
+## 4. Warstwy backendu
 
-Внутри каждого модуля используются четыре логических слоя:
+Wewnątrz każdego modułu występują cztery logiczne warstwy:
 
 ```text
-api             REST-контроллеры, request/response DTO
-application     сценарии использования, транзакции, права доступа
-domain          сущности, бизнес-правила, доменные события
-infrastructure  JPA, PayU, SMTP, S3, планировщики
+api             kontrolery REST, request/response DTO
+application     scenariusze użycia, transakcje, prawa dostępu
+domain          encje, zasady biznesowe, zdarzenia domenowe
+infrastructure  JPA, PayU, SMTP, S3, harmonogramy
 ```
 
-Зависимости направлены от внешних слоев к доменному. JPA-сущности могут
-совпадать с доменными сущностями в MVP, если это не нарушает границы модулей.
+Zależności biegną od warstw zewnętrznych do domeny. Encje JPA mogą pokrywać się
+z encjami domenowymi w MVP, o ile nie narusza to granic modułów.
 
-## 5. Frontend-архитектура
+## 5. Architektura frontendu
 
-Frontend разделяется по предметным областям:
+Frontend jest podzielony według obszarów domenowych:
 
 ```text
 src/
-  app/          router, providers, theme, authorization guards
-  api/          Axios instance, interceptors, generated/shared API types
+  app/          router, providery, theme, guardy autoryzacji
+  api/          instancja Axios, interceptory, wspólne/generowane typy API
   features/     auth, profile, schedule, booking, passes, payments, reviews
   pages/        public, client, instructor, admin
-  components/   общие UI-компоненты
-  hooks/        общие React hooks
-  utils/        форматирование дат, денег и ошибок
+  components/   wspólne komponenty UI
+  hooks/        wspólne hooki React
+  utils/        formatowanie dat, pieniędzy i błędów
 ```
 
-Основные решения:
+Główne decyzje:
 
-- React Router DOM для маршрутизации;
-- Material UI для компонентов и адаптивной темы;
-- Axios для HTTP-запросов;
-- access token хранится в памяти приложения;
-- refresh token передается в `HttpOnly`, `Secure`, `SameSite` cookie;
-- сервер остается источником истины для ролей, цен и доступности мест;
-- даты API передаются в ISO 8601, отображаются в часовом поясе школы.
+- React Router DOM do routingu;
+- Material UI do komponentów i responsywnego motywu;
+- Axios do zapytań HTTP;
+- access token jest przechowywany w pamięci aplikacji;
+- refresh token jest przekazywany w ciasteczku `HttpOnly`, `Secure`, `SameSite`;
+- serwer pozostaje źródłem prawdy dla ról, cen i dostępności miejsc;
+- daty API są przekazywane w ISO 8601 i wyświetlane w strefie czasowej szkoły.
 
-## 6. Аутентификация и авторизация
+## 6. Uwierzytelnianie i autoryzacja
 
-1. После входа backend возвращает короткоживущий access token.
-2. Refresh token хранится в хешированном виде в БД и передается cookie.
-3. Обновление токена выполняет ротацию refresh token.
-4. Выход отзывает текущую сессию.
-5. Backend проверяет роль и принадлежность ресурса на каждом защищенном
-   endpoint.
-6. Для браузерной аутентификации refresh endpoint защищается CSRF-токеном.
+1. Po zalogowaniu backend zwraca krótkowieczny access token.
+2. Refresh token jest przechowywany w bazie w formie hasha i przekazywany przez cookie.
+3. Odświeżenie tokena wykonuje rotację refresh tokena.
+4. Wylogowanie odwołuje bieżącą sesję.
+5. Backend sprawdza rolę i własność zasobu na każdym chronionym endpointzie.
+6. Dla uwierzytelniania przeglądarkowego endpoint refresh jest chroniony tokenem CSRF.
 
-Предлагаемые сроки:
+Proponowane czasy:
 
-- access token: 15 минут;
-- refresh token: 30 дней;
-- подтверждение email: 24 часа;
-- восстановление пароля: 30 минут.
+- access token: 15 minut;
+- refresh token: 30 dni;
+- potwierdzenie email: 24 godziny;
+- reset hasła: 30 minut.
 
-## 7. Критические транзакции
+## 7. Transakcje krytyczne
 
-### Бронирование места
+### Rezerwacja miejsca
 
 ```mermaid
 sequenceDiagram
@@ -141,66 +140,67 @@ sequenceDiagram
     B-->>C: reservation status
 ```
 
-Строка занятия блокируется через `SELECT ... FOR UPDATE` или эквивалентный
-pessimistic write lock. Это не позволяет двум параллельным запросам занять
-последнее место.
+Wiersz zajęć jest blokowany przez `SELECT ... FOR UPDATE` albo równoważny
+`pessimistic write lock`. Dzięki temu dwa równoległe żądania nie zajmą
+ostatniego miejsca jednocześnie.
 
-### Продвижение листа ожидания
+### Przesunięcie listy oczekujących
 
-Отмена брони, возврат посещения и перевод первого участника очереди выполняются
-в одной транзакции. Порядок определяется `position`, затем `created_at`.
+Anulowanie rezerwacji, zwrot wejścia i przeniesienie pierwszej osoby z kolejki
+wykonywane są w jednej transakcji. Kolejność jest określana przez `position`,
+a następnie `created_at`.
 
-### Обработка платежа
+### Obsługa płatności
 
 Callback PayU:
 
-1. проходит проверку подписи;
-2. сохраняется с уникальным идентификатором события;
-3. блокирует заказ на время обработки;
-4. сверяет сумму и валюту;
-5. идемпотентно меняет статус платежа;
-6. один раз создает пользовательский абонемент;
-7. добавляет уведомление в outbox.
+1. przechodzi weryfikację podpisu;
+2. jest zapisywany z unikalnym identyfikatorem zdarzenia;
+3. blokuje zamówienie na czas przetwarzania;
+4. porównuje kwotę i walutę;
+5. idempotentnie zmienia status płatności;
+6. tylko raz tworzy karnet użytkownika;
+7. dodaje powiadomienie do outboxa.
 
-## 8. Асинхронные операции
+## 8. Operacje asynchroniczne
 
-В MVP используется transactional outbox в MySQL, без отдельного брокера:
+W MVP wykorzystywany jest transactional outbox w MySQL, bez osobnego brokera:
 
-- бизнес-транзакция записывает событие в `notification_outbox`;
-- планировщик выбирает необработанные записи небольшими пакетами;
-- после успешной отправки фиксируется время отправки;
-- при ошибке увеличивается счетчик попыток и назначается повтор.
+- transakcja biznesowa zapisuje zdarzenie do `notification_outbox`;
+- harmonogram wybiera nieprzetworzone rekordy małymi paczkami;
+- po udanej wysyłce zapisywany jest czas wysłania;
+- przy błędzie zwiększa się licznik prób i planowana jest ponowna wysyłka.
 
-Планировщики также:
+Harmonogramy dodatkowo:
 
-- отправляют напоминания за 24 часа;
-- помечают истекшие заказы и токены;
-- переводят истекшие абонементы в неактивное состояние;
-- очищают отозванные и просроченные refresh token.
+- wysyłają przypomnienia 24 godziny przed zajęciami;
+- oznaczają wygasłe zamówienia i tokeny;
+- przełączają wygasłe karnety do stanu nieaktywnego;
+- czyszczą odwołane i przeterminowane refresh tokeny.
 
-## 9. Работа с файлами
+## 9. Obsługa plików
 
-- Backend принимает изображение профиля через multipart endpoint.
-- Допустимые форматы: JPEG, PNG и WebP.
-- Максимальный размер по умолчанию: 5 МБ.
-- Объект получает случайный ключ, не содержащий исходное имя файла.
-- В БД хранится ключ объекта, а не бинарное содержимое.
-- В локальной среде используется MinIO, в production — совместимое S3.
+- Backend przyjmuje zdjęcie profilowe przez endpoint multipart.
+- Dopuszczalne formaty: JPEG, PNG i WebP.
+- Domyślny maksymalny rozmiar: 5 MB.
+- Obiekt dostaje losowy klucz bez oryginalnej nazwy pliku.
+- W bazie przechowywany jest klucz obiektu, a nie dane binarne.
+- Lokalnie używane jest MinIO, a w production magazyn zgodny z S3.
 
-## 10. Наблюдаемость
+## 10. Obserwowalność
 
-- структурированные логи с correlation ID;
-- Spring Boot Actuator для health и metrics;
-- отдельные readiness и liveness endpoints;
-- аудит входов, ролей, ручных корректировок и платежных операций;
-- секреты, токены и персональные данные не записываются в логи.
+- ustrukturyzowane logi z correlation ID;
+- Spring Boot Actuator dla health i metrics;
+- osobne endpointy readiness i liveness;
+- audyt logowań, ról, ręcznych korekt i operacji płatniczych;
+- sekrety, tokeny i dane osobowe nie trafiają do logów.
 
-## 11. Развертывание
+## 11. Wdrożenie
 
 ```mermaid
 flowchart TB
     Proxy[Reverse proxy / TLS]
-    Frontend[React static files]
+    Frontend[Statyczne pliki React]
     Backend[Spring Boot]
     MySQL[(MySQL)]
     MinIO[(MinIO / S3)]
@@ -211,28 +211,27 @@ flowchart TB
     Backend --> MinIO
 ```
 
-Локальный Docker Compose будет содержать:
+Lokalny Docker Compose będzie zawierał:
 
 - `frontend`;
 - `backend`;
 - `mysql`;
 - `minio`;
-- локальный SMTP-сервис для разработки.
+- lokalną usługę SMTP do developmentu.
 
-Production может использовать управляемые MySQL, S3 и SMTP без изменений
-прикладной логики.
+Production może używać zarządzanych MySQL, S3 i SMTP bez zmian w logice
+aplikacyjnej.
 
-## 12. Архитектурные решения
+## 12. Decyzje architektoniczne
 
-| ID | Решение |
+| ID | Decyzja |
 |---|---|
-| ADR-01 | Модульный монолит вместо микросервисов для MVP |
-| ADR-02 | REST API с префиксом `/api/v1` |
-| ADR-03 | JWT access token и ротируемый refresh token |
-| ADR-04 | MySQL — источник истины для бронирований и платежей |
-| ADR-05 | Pessimistic lock для конкурентного бронирования |
-| ADR-06 | Transactional outbox для email |
-| ADR-07 | BLIK предоставляется через PayU |
-| ADR-08 | Файлы хранятся в S3-совместимом хранилище |
-| ADR-09 | Flyway управляет изменениями схемы БД |
-
+| ADR-01 | Modularny monolit zamiast mikrousług dla MVP |
+| ADR-02 | REST API z prefiksem `/api/v1` |
+| ADR-03 | JWT access token i rotowany refresh token |
+| ADR-04 | MySQL jako źródło prawdy dla rezerwacji i płatności |
+| ADR-05 | Pessimistic lock dla współbieżnych rezerwacji |
+| ADR-06 | Transactional outbox dla emaili |
+| ADR-07 | BLIK jest dostarczany przez PayU |
+| ADR-08 | Pliki są przechowywane w magazynie zgodnym z S3 |
+| ADR-09 | Flyway zarządza zmianami schematu bazy danych |

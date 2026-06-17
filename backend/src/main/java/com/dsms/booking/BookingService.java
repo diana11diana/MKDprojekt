@@ -79,8 +79,8 @@ public class BookingService {
             notificationService.notify(
                     user,
                     NotificationType.WAITLIST_JOINED,
-                    "Вы в листе ожидания",
-                    "Занятие \"" + session.getTitle() + "\" заполнено. Ваша позиция: " + waiting.getPosition() + "."
+                    "Jesteś na liście oczekujących",
+                    "Zajęcia \"" + session.getTitle() + "\" są pełne. Twoja pozycja: " + waiting.getPosition() + "."
             );
             return new BookingResult(
                     BookingResultStatus.WAITLISTED,
@@ -101,8 +101,8 @@ public class BookingService {
         notificationService.notify(
                 user,
                 NotificationType.BOOKING_CONFIRMED,
-                "Запись подтверждена",
-                "Вы записаны на \"" + session.getTitle() + "\"."
+                "Rezerwacja potwierdzona",
+                "Zostałeś zapisany na \"" + session.getTitle() + "\"."
         );
 
         return new BookingResult(BookingResultStatus.CONFIRMED, existing.getId(), null, null);
@@ -126,8 +126,8 @@ public class BookingService {
         notificationService.notify(
                 user,
                 NotificationType.RESERVATION_CANCELLED,
-                "Запись отменена",
-                "Вы отменили запись на \"" + session.getTitle() + "\"."
+                "Rezerwacja anulowana",
+                "Anulowałeś rezerwację na \"" + session.getTitle() + "\"."
         );
         promoteFirstEligible(session);
     }
@@ -196,8 +196,8 @@ public class BookingService {
                 notificationService.notify(
                         next.getUser(),
                         NotificationType.WAITLIST_PROMOTED,
-                        "Место освободилось",
-                        "Вы автоматически записаны на \"" + session.getTitle() + "\" из листа ожидания."
+                        "Zwolniło się miejsce",
+                        "Zostałeś automatycznie zapisany na \"" + session.getTitle() + "\" z listy oczekujących."
                 );
                 return;
             } catch (AuthException exception) {

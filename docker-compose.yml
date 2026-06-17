@@ -1,6 +1,9 @@
+name: dsms
+
 services:
   mysql:
     image: mysql:8.4
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-dsms}
       MYSQL_USER: ${MYSQL_USER:-dsms}
@@ -11,13 +14,14 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
       interval: 5s
       timeout: 5s
       retries: 20
 
   backend:
     build: ./backend
+    restart: unless-stopped
     environment:
       DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-dsms}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USERNAME: ${MYSQL_USER:-dsms}
@@ -26,6 +30,7 @@ services:
       BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-true}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@dsms.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin1234}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
     ports:
       - "8080:8080"
     depends_on:
@@ -34,6 +39,7 @@ services:
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     ports:
       - "3000:80"
     depends_on:
@@ -41,3 +47,4 @@ services:
 
 volumes:
   mysql-data:
+    name: dsms-mysql-data

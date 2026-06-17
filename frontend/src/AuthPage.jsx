@@ -43,14 +43,14 @@ export function LoginPage() {
       await login(form)
       navigate(location.state?.from || '/profile', { replace: true })
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось войти. Проверьте данные.'))
+      setError(getApiError(requestError, 'Nie udało się zalogować. Sprawdź dane.'))
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <AuthLayout title="С возвращением" subtitle="Войдите в личный кабинет">
+    <AuthLayout title="Witaj ponownie" subtitle="Zaloguj się do swojego konta">
       <Box component="form" onSubmit={submit}>
         <Stack spacing={2.5}>
           {error && <Alert severity="error">{error}</Alert>}
@@ -63,7 +63,7 @@ export function LoginPage() {
             onChange={(event) => setForm({ ...form, email: event.target.value })}
           />
           <TextField
-            label="Пароль"
+            label="Hasło"
             type="password"
             required
             autoComplete="current-password"
@@ -71,11 +71,11 @@ export function LoginPage() {
             onChange={(event) => setForm({ ...form, password: event.target.value })}
           />
           <Button type="submit" size="large" variant="contained" disabled={submitting}>
-            {submitting ? <CircularProgress size={24} color="inherit" /> : 'Войти'}
+            {submitting ? <CircularProgress size={24} color="inherit" /> : 'Zaloguj się'}
           </Button>
           <Typography textAlign="center" color="text.secondary">
-            Нет аккаунта?{' '}
-            <Link component={RouterLink} to="/register">Зарегистрироваться</Link>
+            Nie masz konta?{' '}
+            <Link component={RouterLink} to="/register">Zarejestruj się</Link>
           </Typography>
         </Stack>
       </Box>
@@ -109,32 +109,32 @@ export function RegisterPage() {
       } else {
         navigate('/login', {
           replace: true,
-          state: { message: 'Проверьте почту и подтвердите регистрацию.' },
+          state: { message: 'Sprawdź pocztę i potwierdź rejestrację.' },
         })
       }
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось зарегистрироваться.'))
+      setError(getApiError(requestError, 'Nie udało się zarejestrować.'))
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <AuthLayout title="Начните танцевать" subtitle="Создайте аккаунт клиента">
+    <AuthLayout title="Zacznij tańczyć" subtitle="Utwórz konto klienta">
       <Box component="form" onSubmit={submit}>
         <Stack spacing={2.5}>
           {error && <Alert severity="error">{error}</Alert>}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField
               fullWidth
-              label="Имя"
+              label="Imię"
               required
               value={form.firstName}
               onChange={change('firstName')}
             />
             <TextField
               fullWidth
-              label="Фамилия"
+              label="Nazwisko"
               required
               value={form.lastName}
               onChange={change('lastName')}
@@ -149,26 +149,26 @@ export function RegisterPage() {
             onChange={change('email')}
           />
           <TextField
-            label="Телефон"
+            label="Telefon"
             type="tel"
             autoComplete="tel"
             value={form.phone}
             onChange={change('phone')}
           />
           <TextField
-            label="Пароль"
+            label="Hasło"
             type="password"
             required
             autoComplete="new-password"
-            helperText="Минимум 8 символов, одна заглавная буква и одна цифра"
+            helperText="Minimum 8 znaków, jedna wielka litera i jedna cyfra"
             value={form.password}
             onChange={change('password')}
           />
           <Button type="submit" size="large" variant="contained" disabled={submitting}>
-            {submitting ? <CircularProgress size={24} color="inherit" /> : 'Создать аккаунт'}
+            {submitting ? <CircularProgress size={24} color="inherit" /> : 'Utwórz konto'}
           </Button>
           <Typography textAlign="center" color="text.secondary">
-            Уже есть аккаунт? <Link component={RouterLink} to="/login">Войти</Link>
+            Masz już konto? <Link component={RouterLink} to="/login">Zaloguj się</Link>
           </Typography>
         </Stack>
       </Box>

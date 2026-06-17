@@ -21,7 +21,7 @@ public class AccountToken {
     @Column(nullable = false, length = 30)
     private TokenType type;
 
-    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+    @Column(name = "token_hash", nullable = false, unique = true, columnDefinition = "char(64)")
     private String tokenHash;
 
     @Column(name = "expires_at", nullable = false)

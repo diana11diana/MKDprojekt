@@ -16,6 +16,8 @@ public interface ClassSessionRepository extends JpaRepository<ClassSession, Long
             Instant startAt
     );
 
+    List<ClassSession> findByInstructorIdOrderByStartAtAsc(Long instructorId);
+
     List<ClassSession> findAllByOrderByStartAtDesc();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

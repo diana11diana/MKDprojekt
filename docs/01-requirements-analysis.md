@@ -1,312 +1,309 @@
-# DSMS: анализ требований
+# DSMS: analiza wymagań
 
-## 1. Цель документа
+## 1. Cel dokumentu
 
-Документ уточняет исходное техническое задание для системы управления школой
-танцев и фиксирует объем первой версии продукта.
+Dokument doprecyzowuje wyjściowe założenia techniczne dla systemu zarządzania
+szkołą tańca i określa zakres pierwszej wersji produktu.
 
-## 2. Цели продукта
+## 2. Cele produktu
 
-Система должна:
+System ma:
 
-- предоставить клиентам самостоятельную запись на занятия;
-- автоматизировать продажу и учет абонементов;
-- снизить ручную работу администраторов;
-- дать инструкторам инструменты учета посещаемости;
-- обеспечить школе прозрачный учет клиентов, бронирований и платежей.
+- umożliwić klientom samodzielny zapis na zajęcia;
+- zautomatyzować sprzedaż i ewidencję karnetów;
+- ograniczyć ręczną pracę administratorów;
+- dać instruktorom narzędzia do ewidencji obecności;
+- zapewnić szkole przejrzyste rozliczanie klientów, rezerwacji i płatności.
 
-## 3. Роли и права
+## 3. Role i uprawnienia
 
-### Гость
+### Gość
 
-- просматривает публичное расписание;
-- фильтрует занятия;
-- регистрируется;
-- входит в систему;
-- восстанавливает пароль.
+- przegląda publiczny grafik;
+- filtruje zajęcia;
+- rejestruje się;
+- loguje się do systemu;
+- odzyskuje hasło.
 
-### Клиент
+### Klient
 
-- управляет профилем и фотографией;
-- просматривает расписание и свободные места;
-- бронирует и отменяет занятия;
-- становится в лист ожидания;
-- приобретает и просматривает абонементы;
-- просматривает бронирования, посещения и платежи;
-- оставляет отзывы после посещенных занятий.
+- zarządza profilem i zdjęciem;
+- przegląda grafik i liczbę wolnych miejsc;
+- rezerwuje i anuluje zajęcia;
+- dołącza do listy oczekujących;
+- kupuje i przegląda karnety;
+- przegląda rezerwacje, obecności i płatności;
+- zostawia opinie po odbytych zajęciach.
 
-### Инструктор
+### Instruktor
 
-- просматривает только свои занятия;
-- просматривает участников своих занятий;
-- отмечает присутствие и отсутствие;
-- просматривает статистику по своим занятиям.
+- przegląda wyłącznie własne zajęcia;
+- przegląda uczestników swoich zajęć;
+- oznacza obecności i nieobecności;
+- przegląda statystyki swoich zajęć.
 
-### Администратор
+### Administrator
 
-- управляет пользователями и инструкторами;
-- управляет направлениями и занятиями;
-- управляет типами абонементов;
-- просматривает бронирования и платежи;
-- создает мероприятия;
-- просматривает отчеты и общую статистику.
+- zarządza użytkownikami i instruktorami;
+- zarządza stylami i zajęciami;
+- zarządza typami karnetów;
+- przegląda rezerwacje i płatności;
+- tworzy wydarzenia;
+- przegląda raporty i statystyki ogólne.
 
-## 4. Объем MVP
+## 4. Zakres MVP
 
-В первую рабочую версию входят:
+Do pierwszej działającej wersji wchodzą:
 
-1. Регистрация, подтверждение email, вход и восстановление пароля.
-2. Ролевая модель CLIENT, INSTRUCTOR и ADMIN.
-3. Профиль пользователя.
-4. Каталог занятий и расписание с фильтрами.
-5. Бронирование, отмена и лист ожидания.
-6. Ограниченные и безлимитные абонементы.
-7. Оплата через PayU с поддержкой BLIK в рамках PayU.
-8. Email-уведомления.
-9. Учет посещаемости.
-10. Отзывы и оценки.
-11. Панели клиента, инструктора и администратора.
-12. Базовые финансовые и операционные отчеты.
-13. Swagger/OpenAPI и запуск через Docker Compose.
+1. Rejestracja, potwierdzenie email, logowanie i odzyskiwanie hasła.
+2. Model ról CLIENT, INSTRUCTOR i ADMIN.
+3. Profil użytkownika.
+4. Katalog zajęć i grafik z filtrami.
+5. Rezerwacja, anulowanie i lista oczekujących.
+6. Karnety limitowane i nielimitowane.
+7. Płatność przez PayU z obsługą BLIK w ramach PayU.
+8. Powiadomienia email.
+9. Ewidencja obecności.
+10. Opinie i oceny.
+11. Panele klienta, instruktora i administratora.
+12. Podstawowe raporty finansowe i operacyjne.
+13. Swagger/OpenAPI oraz uruchamianie przez Docker Compose.
 
-Не входят в MVP:
+Poza zakresem MVP:
 
-- мобильное приложение;
-- SMS и push-уведомления;
-- промокоды, скидки и программа лояльности;
-- начисление зарплаты инструкторам;
-- интеграция с бухгалтерией;
-- занятия по видеосвязи;
-- бронирование нескольких филиалов;
-- автоматическое восстановление всей инфраструктуры после аварии.
+- aplikacja mobilna;
+- SMS-y i powiadomienia push;
+- kody promocyjne, rabaty i program lojalnościowy;
+- naliczanie wynagrodzeń instruktorów;
+- integracja z księgowością;
+- zajęcia wideo;
+- rezerwacje dla wielu oddziałów;
+- automatyczne odtworzenie całej infrastruktury po awarii.
 
-## 5. Основные пользовательские сценарии
+## 5. Główne scenariusze użytkownika
 
-### UC-01. Регистрация клиента
+### UC-01. Rejestracja klienta
 
-1. Гость вводит имя, фамилию, email, телефон и пароль.
-2. Система проверяет уникальность email и требования к паролю.
-3. Система создает неактивную учетную запись.
-4. Пользователь получает письмо со ссылкой подтверждения.
-5. После перехода по действующей ссылке учетная запись активируется.
+1. Gość podaje imię, nazwisko, email, telefon i hasło.
+2. System sprawdza unikalność emaila i wymagania dotyczące hasła.
+3. System tworzy nieaktywną kartę użytkownika.
+4. Użytkownik otrzymuje email z linkiem potwierdzającym.
+5. Po przejściu aktywnego linku konto zostaje aktywowane.
 
-Результат: пользователь может войти в систему.
+Rezultat: użytkownik może zalogować się do systemu.
 
-### UC-02. Вход
+### UC-02. Logowanie
 
-1. Пользователь вводит email и пароль.
-2. Система проверяет учетные данные и состояние учетной записи.
-3. При успехе система выдает access token и refresh token.
+1. Użytkownik podaje email i hasło.
+2. System sprawdza dane logowania i stan konta.
+3. Przy powodzeniu system wydaje access token i refresh token.
 
-Результат: пользователь получает доступ согласно своей роли.
+Rezultat: użytkownik uzyskuje dostęp zgodnie ze swoją rolą.
 
-### UC-03. Просмотр расписания
+### UC-03. Przegląd grafiku
 
-1. Пользователь открывает расписание.
-2. Система показывает будущие опубликованные занятия.
-3. Пользователь фильтрует данные по дате, инструктору, направлению и уровню.
+1. Użytkownik otwiera grafik.
+2. System pokazuje przyszłe opublikowane zajęcia.
+3. Użytkownik filtruje dane według daty, instruktora, stylu i poziomu.
 
-Результат: для каждого занятия видны время, длительность и свободные места.
+Rezultat: dla każdych zajęć widoczne są godzina, czas trwania i wolne miejsca.
 
-### UC-04. Бронирование по абонементу
+### UC-04. Rezerwacja z użyciem karnetu
 
-1. Клиент выбирает занятие.
-2. Система проверяет доступность занятия и подходящий активный абонемент.
-3. При наличии места создается подтвержденная бронь.
-4. Для ограниченного абонемента резервируется одно посещение.
-5. Клиент получает email.
+1. Klient wybiera zajęcia.
+2. System sprawdza dostępność zajęć i odpowiedni aktywny karnet.
+3. Jeśli jest miejsce, tworzona jest potwierdzona rezerwacja.
+4. Dla karnetu limitowanego rezerwowane jest jedno wejście.
+5. Klient otrzymuje email.
 
-Результат: место закреплено за клиентом.
+Rezultat: miejsce zostaje przypisane do klienta.
 
-### UC-05. Лист ожидания
+### UC-05. Lista oczekujących
 
-1. Клиент выбирает заполненное занятие.
-2. Система добавляет клиента в конец очереди.
-3. После отмены подтвержденной брони первый участник очереди автоматически
-   получает место.
-4. Система отправляет ему уведомление.
+1. Klient wybiera pełne zajęcia.
+2. System dodaje klienta na koniec kolejki.
+3. Po anulowaniu potwierdzonej rezerwacji pierwszy uczestnik kolejki
+   automatycznie otrzymuje miejsce.
+4. System wysyła mu powiadomienie.
 
-Результат: очередь обрабатывается в порядке FIFO.
+Rezultat: kolejka jest obsługiwana w porządku FIFO.
 
-### UC-06. Отмена бронирования
+### UC-06. Anulowanie rezerwacji
 
-1. Клиент отменяет бронь до установленного крайнего срока.
-2. Система освобождает место и возвращает зарезервированное посещение.
-3. При наличии очереди система продвигает первого участника.
+1. Klient anuluje rezerwację przed wyznaczonym terminem granicznym.
+2. System zwalnia miejsce i zwraca zarezerwowane wejście.
+3. Jeśli lista oczekujących nie jest pusta, system przesuwa pierwszą osobę.
 
-Результат: бронь отменена, данные абонемента согласованы.
+Rezultat: rezerwacja zostaje anulowana, a dane karnetu pozostają spójne.
 
-### UC-07. Покупка абонемента
+### UC-07. Zakup karnetu
 
-1. Клиент выбирает доступный тип абонемента.
-2. Система создает заказ и платеж со статусом PENDING.
-3. На время платежа заказ резервируется на 5 минут.
-4. Клиент оплачивает заказ через PayU/BLIK.
-5. Backend проверяет callback платежной системы.
-6. После успешной оплаты создается пользовательский абонемент.
+1. Klient wybiera dostępny typ karnetu.
+2. System tworzy zamówienie i płatność ze statusem PENDING.
+3. Na czas płatności zamówienie jest rezerwowane na 5 minut.
+4. Klient opłaca zamówienie przez PayU/BLIK.
+5. Backend weryfikuje callback systemu płatności.
+6. Po udanej płatności tworzony jest karnet użytkownika.
 
-Результат: платеж имеет статус PAID, абонемент активен.
+Rezultat: płatność ma status PAID, a karnet jest aktywny.
 
-### UC-08. Учет посещаемости
+### UC-08. Ewidencja obecności
 
-1. Инструктор открывает завершившееся или текущее занятие.
-2. Инструктор отмечает каждого участника как PRESENT или ABSENT.
-3. Система окончательно списывает зарезервированное посещение только для
-   PRESENT.
-4. Для ABSENT применяется политика поздней отмены или неявки.
+1. Instruktor otwiera zakończone lub trwające zajęcia.
+2. Instruktor oznacza każdego uczestnika jako PRESENT albo ABSENT.
+3. System ostatecznie rozlicza zarezerwowane wejście tylko dla PRESENT.
+4. Dla ABSENT działa polityka późnej anulacji albo nieobecności.
 
-Результат: посещаемость сохранена и доступна в статистике.
+Rezultat: obecność jest zapisana i dostępna w statystykach.
 
-### UC-09. Отзыв
+### UC-09. Opinia
 
-1. Клиент открывает завершенное занятие с отметкой PRESENT.
-2. Клиент ставит оценку от 1 до 5 и при желании пишет комментарий.
-3. Система разрешает не более одного отзыва клиента на занятие.
+1. Klient otwiera zakończone zajęcia z oznaczeniem PRESENT.
+2. Klient wystawia ocenę od 1 do 5 i opcjonalnie dodaje komentarz.
+3. System dopuszcza maksymalnie jedną opinię klienta na zajęcia.
 
-Результат: отзыв сохранен.
+Rezultat: opinia zostaje zapisana.
 
-## 6. Бизнес-правила
+## 6. Zasady biznesowe
 
-### Учетные записи
+### Konta użytkowników
 
-- Email уникален без учета регистра.
-- Пароль содержит не менее 8 символов, одну заглавную букву и одну цифру.
-- Неподтвержденная учетная запись не может авторизоваться.
-- После 5 неудачных попыток вход блокируется на 15 минут.
-- Ссылки подтверждения email и восстановления пароля одноразовые и имеют
-  ограниченный срок действия.
+- Email jest unikalny bez rozróżniania wielkości liter.
+- Hasło zawiera co najmniej 8 znaków, jedną wielką literę i jedną cyfrę.
+- Niepotwierdzone konto nie może się zalogować.
+- Po 5 nieudanych próbach logowanie jest blokowane na 15 minut.
+- Linki potwierdzenia email i resetu hasła są jednorazowe i mają ograniczony
+  czas ważności.
 
-### Занятия и бронирования
+### Zajęcia i rezerwacje
 
-- Нельзя создать две активные брони одного клиента на одно занятие.
-- Нельзя одновременно иметь активную бронь и запись в листе ожидания.
-- Нельзя бронировать начавшееся или отмененное занятие.
-- Количество подтвержденных броней не превышает вместимость.
-- Операции занятия места и продвижения очереди выполняются транзакционно.
-- Клиент может отменить бронь без потери посещения не позднее чем за 12 часов
-  до начала.
-- При более поздней отмене или неявке посещение не возвращается.
-- Администратор может отменить занятие; в этом случае посещения возвращаются
-  всем клиентам.
+- Nie można utworzyć dwóch aktywnych rezerwacji jednego klienta na te same zajęcia.
+- Nie można jednocześnie mieć aktywnej rezerwacji i wpisu na liście oczekujących.
+- Nie można rezerwować zajęć rozpoczętych ani anulowanych.
+- Liczba potwierdzonych rezerwacji nie może przekroczyć pojemności.
+- Operacje zajęcia miejsca i przesuwania kolejki są transakcyjne.
+- Klient może anulować rezerwację bez utraty wejścia najpóźniej 12 godzin
+  przed rozpoczęciem.
+- Przy późniejszej anulacji albo nieobecności wejście nie jest zwracane.
+- Administrator może anulować zajęcia; wtedy wejścia wracają do wszystkich klientów.
 
-### Абонементы
+### Karnety
 
-- Ограниченный абонемент задает число посещений и срок действия.
-- Безлимитный абонемент задает только срок действия.
-- Абонемент начинает действовать в момент успешной оплаты.
-- Для бронирования абонемент должен быть действителен на дату занятия.
-- Одно занятие не может списать более одного посещения.
-- Истекшие абонементы нельзя использовать для новых бронирований.
+- Karnet limitowany określa liczbę wejść i okres ważności.
+- Karnet bez limitu określa wyłącznie okres ważności.
+- Karnet zaczyna obowiązywać w chwili udanej płatności.
+- Aby zarezerwować zajęcia, karnet musi być ważny w dniu zajęć.
+- Jedne zajęcia nie mogą rozliczyć więcej niż jednego wejścia.
+- Wygasłych karnetów nie można używać do nowych rezerwacji.
 
-### Платежи
+### Płatności
 
-- BLIK используется как способ оплаты, предоставляемый PayU.
-- Статус оплаты меняется только после проверки подписанного уведомления PayU.
-- Повторный callback не должен повторно активировать абонемент.
-- Сумма и валюта callback должны совпадать с заказом.
-- Валюта первой версии: PLN.
+- BLIK jest metodą płatności udostępnianą przez PayU.
+- Status płatności zmienia się dopiero po weryfikacji podpisanego powiadomienia PayU.
+- Powtórzony callback nie może ponownie aktywować karnetu.
+- Kwota i waluta callbacku muszą odpowiadać zamówieniu.
+- Waluta pierwszej wersji: PLN.
 
-### Отзывы
+### Opinie
 
-- Отзыв доступен только после завершения занятия.
-- Автор должен иметь отметку PRESENT.
-- Один клиент может оставить один отзыв на занятие.
-- Администратор может скрыть отзыв, но не изменять его содержание.
+- Opinia jest dostępna dopiero po zakończeniu zajęć.
+- Autor musi mieć status PRESENT.
+- Jeden klient może zostawić jedną opinię do jednych zajęć.
+- Administrator może ukryć opinię, ale nie może zmienić jej treści.
 
-## 7. Уведомления
+## 7. Powiadomienia
 
-Email отправляется:
+Email jest wysyłany:
 
-- после регистрации;
-- для подтверждения email;
-- для восстановления пароля;
-- после подтверждения или отмены брони;
-- после добавления в лист ожидания;
-- после автоматического получения места;
-- за 24 часа до занятия;
-- после успешной или неуспешной оплаты;
-- после отмены занятия администратором;
-- после завершения посещенного занятия с предложением оставить отзыв.
+- po rejestracji;
+- w celu potwierdzenia emaila;
+- w celu odzyskania hasła;
+- po potwierdzeniu albo anulowaniu rezerwacji;
+- po dodaniu do listy oczekujących;
+- po automatycznym przydzieleniu miejsca;
+- 24 godziny przed zajęciami;
+- po udanej albo nieudanej płatności;
+- po anulowaniu zajęć przez administratora;
+- po zakończeniu odbytych zajęć z propozycją wystawienia opinii.
 
-Ошибка отправки email не должна откатывать успешно выполненную бизнес-операцию.
-Неотправленные сообщения должны сохраняться для повторной отправки.
+Błąd wysyłki emaila nie powinien cofać poprawnie wykonanej operacji biznesowej.
+Niewysłane wiadomości muszą być zachowane do ponownej wysyłki.
 
-## 8. Отчеты MVP
+## 8. Raporty MVP
 
-Администратору доступны:
+Administrator ma dostęp do:
 
-- выручка за выбранный период;
-- число успешных и неуспешных платежей;
-- продажи по типам абонементов;
-- загрузка занятий;
-- посещаемость и неявки;
-- популярность направлений;
-- активные клиенты;
-- статистика по инструкторам.
+- przychodu za wybrany okres;
+- liczby udanych i nieudanych płatności;
+- sprzedaży według typów karnetów;
+- obłożenia zajęć;
+- frekwencji i nieobecności;
+- popularności stylów;
+- aktywnych klientów;
+- statystyk instruktorów.
 
-Экспорт отчетов в первой версии: CSV.
+Eksport raportów w pierwszej wersji: CSV.
 
-## 9. Нефункциональные требования
+## 9. Wymagania niefunkcjonalne
 
-### Производительность
+### Wydajność
 
-- 95% обычных API-запросов выполняются не дольше 2 секунд.
-- Система проектируется для 500 одновременных пользовательских сессий.
-- Расписание использует пагинацию и индексы базы данных.
+- 95% zwykłych zapytań API wykonuje się w czasie do 2 sekund.
+- System jest projektowany na 500 równoczesnych sesji użytkowników.
+- Grafik używa paginacji i indeksów bazy danych.
 
-### Безопасность
+### Bezpieczeństwo
 
-- Пароли хешируются BCrypt.
-- Access token имеет короткий срок жизни; refresh token можно отозвать.
-- Права проверяются на уровне backend.
-- Входные DTO проходят серверную валидацию.
-- Для загрузок проверяются MIME-тип, расширение и размер файла.
-- Секреты не хранятся в Git.
-- Production работает только через HTTPS.
-- События входа, изменения ролей и платежей журналируются.
+- Hasła są haszowane przez BCrypt.
+- Access token ma krótki czas życia; refresh token może zostać odwołany.
+- Uprawnienia są sprawdzane po stronie backendu.
+- Wejściowe DTO przechodzą walidację serwerową.
+- Dla uploadów sprawdzane są typ MIME, rozszerzenie i rozmiar pliku.
+- Sekrety nie są przechowywane w Git.
+- Production działa wyłącznie przez HTTPS.
+- Zdarzenia logowania, zmian ról i płatności są logowane audytowo.
 
-### Надежность
+### Niezawodność
 
-- Все изменения платежей и бронирований идемпотентны.
-- Ошибки логируются без паролей, токенов и платежных секретов.
-- База данных резервируется ежедневно.
-- Процедура восстановления проверяется отдельно перед production-релизом.
+- Wszystkie zmiany płatności i rezerwacji są idempotentne.
+- Błędy są logowane bez haseł, tokenów i sekretów płatności.
+- Kopia zapasowa bazy danych wykonywana jest codziennie.
+- Procedura odtwarzania jest testowana osobno przed wydaniem production.
 
-### Совместимость
+### Zgodność
 
-- Интерфейс адаптивен для телефона, планшета и компьютера.
-- Поддерживаются актуальные версии Chrome, Edge, Firefox и Safari.
-- Основной язык первой версии: русский.
-- Часовой пояс школы настраивается; исходное значение: Europe/Warsaw.
+- Interfejs jest responsywny na telefonie, tablecie i komputerze.
+- Obsługiwane są aktualne wersje Chrome, Edge, Firefox i Safari.
+- Głównym językiem pierwszej wersji jest polski.
+- Strefa czasowa szkoły jest konfigurowalna; wartość początkowa: Europe/Warsaw.
 
-## 10. Критерии готовности MVP
+## 10. Kryteria gotowości MVP
 
-MVP считается готовым, если:
+MVP uznaje się za gotowe, jeśli:
 
-- все обязательные сценарии выполняются через интерфейс;
-- права трех ролей протестированы;
-- конкурентное бронирование не приводит к переполнению занятия;
-- PayU sandbox успешно обрабатывает оплату, ошибку и повторный callback;
-- письма формируются и отправляются через настроенный SMTP;
-- основные API покрыты интеграционными тестами;
-- frontend проходит ключевые end-to-end сценарии;
-- проект запускается одной командой Docker Compose;
-- Swagger описывает доступные API;
-- подготовлены инструкции запуска, настройки и резервного копирования.
+- wszystkie obowiązkowe scenariusze są realizowane przez interfejs;
+- prawa trzech ról są przetestowane;
+- współbieżne rezerwacje nie prowadzą do przepełnienia zajęć;
+- sandbox PayU poprawnie obsługuje płatność, błąd i powtórzony callback;
+- emaile są generowane i wysyłane przez skonfigurowany SMTP;
+- główne API są pokryte testami integracyjnymi;
+- frontend przechodzi kluczowe scenariusze end-to-end;
+- projekt uruchamia się jednym poleceniem Docker Compose;
+- Swagger opisuje dostępne API;
+- przygotowano instrukcje uruchomienia, konfiguracji i backupu.
 
-## 11. Принятые допущения
+## 11. Przyjęte założenia
 
-До отдельного согласования используются следующие решения:
+Do czasu osobnego uzgodnienia obowiązują następujące decyzje:
 
-- одна школа и один часовой пояс;
-- одна валюта PLN;
-- BLIK интегрируется через PayU;
-- фотография профиля хранится в S3-совместимом хранилище, а локально может
-  использоваться MinIO;
-- срок бесплатной отмены составляет 12 часов;
-- резервируется не место на занятии во время покупки, а заказ на абонемент;
-- посещение резервируется при бронировании и окончательно списывается после
-  отметки PRESENT или при поздней отмене/неявке;
-- мероприятия являются отдельными разовыми событиями и не используют обычный
-  абонемент, пока не будет согласовано иное.
-
+- jedna szkoła i jedna strefa czasowa;
+- jedna waluta PLN;
+- BLIK jest integrowany przez PayU;
+- zdjęcie profilowe jest przechowywane w magazynie zgodnym z S3, a lokalnie
+  może być używane MinIO;
+- bezpłatna anulacja wynosi 12 godzin;
+- podczas zakupu rezerwowane jest nie miejsce na zajęciach, lecz zamówienie na karnet;
+- wejście jest rezerwowane przy zapisie i ostatecznie rozliczane po oznaczeniu
+  PRESENT albo przy późnej anulacji/nieobecności;
+- wydarzenia są osobnymi jednorazowymi zdarzeniami i nie korzystają ze
+  standardowego karnetu, dopóki nie zostanie uzgodnione inaczej.

@@ -1,18 +1,18 @@
-# DSMS: проектирование базы данных
+# DSMS: projekt bazy danych
 
-## 1. Общие соглашения
+## 1. Ustalenia ogólne
 
-- СУБД: MySQL 8, движок InnoDB, кодировка `utf8mb4`.
-- Первичные ключи: `BIGINT UNSIGNED AUTO_INCREMENT`.
-- Время хранится в UTC в типе `DATETIME(6)`.
-- Денежные значения: `DECIMAL(12,2)`.
-- Валюта: трехбуквенный код ISO 4217.
-- Все изменения схемы выполняются Flyway-миграциями.
-- Для изменяемых сущностей используются `created_at`, `updated_at` и
-  оптимистическая версия `version`, где это необходимо.
-- Удаление пользователей, абонементов и финансовых данных логическое.
+- Silnik bazy danych: MySQL 8, InnoDB, kodowanie `utf8mb4`.
+- Klucze główne: `BIGINT UNSIGNED AUTO_INCREMENT`.
+- Czas jest przechowywany w UTC w typie `DATETIME(6)`.
+- Kwoty pieniężne: `DECIMAL(12,2)`.
+- Waluta: trzyliterowy kod ISO 4217.
+- Wszystkie zmiany schematu są wykonywane przez migracje Flyway.
+- Dla modyfikowalnych encji używane są `created_at`, `updated_at` oraz
+  optymistyczna wersja `version`, jeśli jest potrzebna.
+- Usuwanie użytkowników, karnetów i danych finansowych jest logiczne.
 
-## 2. ER-диаграмма
+## 2. Diagram ER
 
 ```mermaid
 erDiagram
@@ -45,16 +45,16 @@ erDiagram
     USERS ||--o{ AUDIT_LOGS : acts
 ```
 
-## 3. Таблицы
+## 3. Tabele
 
 ### `users`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `first_name` | VARCHAR(100) | NOT NULL |
 | `last_name` | VARCHAR(100) | NOT NULL |
-| `email` | VARCHAR(254) | NOT NULL, хранится в нижнем регистре |
+| `email` | VARCHAR(254) | NOT NULL, przechowywany małymi literami |
 | `phone` | VARCHAR(32) | NULL |
 | `password_hash` | VARCHAR(100) | NOT NULL |
 | `role` | VARCHAR(20) | CLIENT, INSTRUCTOR, ADMIN |
@@ -68,15 +68,15 @@ erDiagram
 | `updated_at` | DATETIME(6) | NOT NULL |
 | `version` | BIGINT UNSIGNED | NOT NULL DEFAULT 0 |
 
-Ограничения и индексы:
+Ograniczenia i indeksy:
 
 - `UNIQUE(email)`;
 - `INDEX(role, status)`;
-- email нормализуется приложением до вставки.
+- email jest normalizowany przez aplikację przed zapisem.
 
 ### `instructor_profiles`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `user_id` | BIGINT UNSIGNED | NOT NULL, FK users, UNIQUE |
@@ -88,7 +88,7 @@ erDiagram
 
 ### `refresh_tokens`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `user_id` | BIGINT UNSIGNED | NOT NULL, FK users |
@@ -100,13 +100,13 @@ erDiagram
 | `created_at` | DATETIME(6) | NOT NULL |
 | `created_ip` | VARCHAR(45) | NULL |
 
-Индексы: `(user_id, expires_at)`, `(family_id)`.
+Indeksy: `(user_id, expires_at)`, `(family_id)`.
 
 ### `account_tokens`
 
-Одноразовые токены подтверждения email и восстановления пароля.
+Jednorazowe tokeny do potwierdzenia emaila i resetu hasła.
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `user_id` | BIGINT UNSIGNED | NOT NULL, FK users |
@@ -118,7 +118,7 @@ erDiagram
 
 ### `dance_styles`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `name` | VARCHAR(100) | NOT NULL, UNIQUE |
@@ -129,7 +129,7 @@ erDiagram
 
 ### `class_sessions`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `title` | VARCHAR(150) | NOT NULL |
@@ -147,7 +147,7 @@ erDiagram
 | `updated_at` | DATETIME(6) | NOT NULL |
 | `version` | BIGINT UNSIGNED | NOT NULL DEFAULT 0 |
 
-Индексы:
+Indeksy:
 
 - `(status, start_at)`;
 - `(instructor_id, start_at)`;
@@ -155,7 +155,7 @@ erDiagram
 
 ### `reservations`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `user_id` | BIGINT UNSIGNED | NOT NULL, FK users |
@@ -168,18 +168,18 @@ erDiagram
 | `created_at` | DATETIME(6) | NOT NULL |
 | `updated_at` | DATETIME(6) | NOT NULL |
 
-Ограничения и индексы:
+Ograniczenia i indeksy:
 
-- `UNIQUE(user_id, class_session_id)` сохраняет одну историю брони на занятие;
+- `UNIQUE(user_id, class_session_id)` zachowuje jedną historię rezerwacji na zajęcia;
 - `(class_session_id, status)`;
 - `(user_id, status, created_at)`.
 
-Повторная запись после отмены меняет существующую строку в рамках разрешенных
-правил, а не создает дубликат.
+Ponowny zapis po anulowaniu aktualizuje istniejący wiersz w ramach dozwolonych
+zasad, zamiast tworzyć duplikat.
 
 ### `waitlist_entries`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `user_id` | BIGINT UNSIGNED | NOT NULL, FK users |
@@ -189,7 +189,7 @@ erDiagram
 | `created_at` | DATETIME(6) | NOT NULL |
 | `updated_at` | DATETIME(6) | NOT NULL |
 
-Ограничения и индексы:
+Ograniczenia i indeksy:
 
 - `UNIQUE(user_id, class_session_id)`;
 - `UNIQUE(class_session_id, position)`;
@@ -197,13 +197,13 @@ erDiagram
 
 ### `pass_types`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `name` | VARCHAR(100) | NOT NULL |
 | `description` | TEXT | NULL |
 | `type` | VARCHAR(20) | LIMITED, UNLIMITED |
-| `visit_count` | SMALLINT UNSIGNED | NULL для UNLIMITED |
+| `visit_count` | SMALLINT UNSIGNED | NULL dla UNLIMITED |
 | `validity_days` | SMALLINT UNSIGNED | NOT NULL, > 0 |
 | `price` | DECIMAL(12,2) | NOT NULL, >= 0 |
 | `currency` | CHAR(3) | NOT NULL DEFAULT PLN |
@@ -212,50 +212,50 @@ erDiagram
 | `updated_at` | DATETIME(6) | NOT NULL |
 | `version` | BIGINT UNSIGNED | NOT NULL DEFAULT 0 |
 
-Проверка приложения:
+Walidacja aplikacyjna:
 
-- LIMITED требует положительный `visit_count`;
-- UNLIMITED требует `visit_count = NULL`.
+- LIMITED wymaga dodatniego `visit_count`;
+- UNLIMITED wymaga `visit_count = NULL`.
 
 ### `user_passes`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `user_id` | BIGINT UNSIGNED | NOT NULL, FK users |
 | `pass_type_id` | BIGINT UNSIGNED | NOT NULL, FK pass_types |
 | `order_item_id` | BIGINT UNSIGNED | NULL, FK order_items, UNIQUE |
 | `status` | VARCHAR(20) | ACTIVE, EXPIRED, EXHAUSTED, CANCELLED |
-| `remaining_visits` | SMALLINT UNSIGNED | NULL для UNLIMITED |
+| `remaining_visits` | SMALLINT UNSIGNED | NULL dla UNLIMITED |
 | `valid_from` | DATETIME(6) | NOT NULL |
 | `valid_until` | DATETIME(6) | NOT NULL |
 | `created_at` | DATETIME(6) | NOT NULL |
 | `updated_at` | DATETIME(6) | NOT NULL |
 | `version` | BIGINT UNSIGNED | NOT NULL DEFAULT 0 |
 
-Индексы: `(user_id, status, valid_until)`.
+Indeksy: `(user_id, status, valid_until)`.
 
 ### `pass_ledger_entries`
 
-Неизменяемый журнал операций с посещениями.
+Niezmienialny rejestr operacji na wejściach.
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `user_pass_id` | BIGINT UNSIGNED | NOT NULL, FK user_passes |
 | `reservation_id` | BIGINT UNSIGNED | NULL, FK reservations |
 | `type` | VARCHAR(30) | RESERVE, RELEASE, CONSUME, ADJUST |
 | `visit_delta` | SMALLINT | NOT NULL |
-| `balance_after` | SMALLINT UNSIGNED | NULL для UNLIMITED |
+| `balance_after` | SMALLINT UNSIGNED | NULL dla UNLIMITED |
 | `reason` | VARCHAR(500) | NULL |
 | `performed_by` | BIGINT UNSIGNED | NULL, FK users |
 | `created_at` | DATETIME(6) | NOT NULL |
 
-Индексы: `(user_pass_id, created_at)`, `(reservation_id)`.
+Indeksy: `(user_pass_id, created_at)`, `(reservation_id)`.
 
 ### `attendance_records`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `reservation_id` | BIGINT UNSIGNED | NOT NULL, FK reservations, UNIQUE |
@@ -266,7 +266,7 @@ erDiagram
 
 ### `orders`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `public_id` | CHAR(36) | NOT NULL, UNIQUE |
@@ -280,14 +280,14 @@ erDiagram
 | `updated_at` | DATETIME(6) | NOT NULL |
 | `version` | BIGINT UNSIGNED | NOT NULL DEFAULT 0 |
 
-Индексы: `(user_id, created_at)`, `(status, expires_at)`.
+Indeksy: `(user_id, created_at)`, `(status, expires_at)`.
 
 ### `order_items`
 
-Цена и название копируются в заказ, чтобы изменения каталога не меняли
-историю покупки.
+Cena i nazwa są kopiowane do zamówienia, aby zmiany w katalogu nie modyfikowały
+historii zakupu.
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `order_id` | BIGINT UNSIGNED | NOT NULL, FK orders |
@@ -300,7 +300,7 @@ erDiagram
 
 ### `payments`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `order_id` | BIGINT UNSIGNED | NOT NULL, FK orders |
@@ -315,11 +315,11 @@ erDiagram
 | `created_at` | DATETIME(6) | NOT NULL |
 | `updated_at` | DATETIME(6) | NOT NULL |
 
-Индексы: `(order_id, created_at)`, `(status, created_at)`.
+Indeksy: `(order_id, created_at)`, `(status, created_at)`.
 
 ### `payment_events`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `payment_id` | BIGINT UNSIGNED | NULL, FK payments |
@@ -333,7 +333,7 @@ erDiagram
 
 ### `reviews`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `user_id` | BIGINT UNSIGNED | NOT NULL, FK users |
@@ -346,13 +346,13 @@ erDiagram
 | `created_at` | DATETIME(6) | NOT NULL |
 | `updated_at` | DATETIME(6) | NOT NULL |
 
-Ограничение: `UNIQUE(user_id, class_session_id)`.
+Ograniczenie: `UNIQUE(user_id, class_session_id)`.
 
 ### `events`
 
-Модель мероприятий остается отдельной от обычных занятий.
+Model wydarzeń pozostaje oddzielony od zwykłych zajęć.
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `title` | VARCHAR(150) | NOT NULL |
@@ -367,12 +367,12 @@ erDiagram
 | `created_at` | DATETIME(6) | NOT NULL |
 | `updated_at` | DATETIME(6) | NOT NULL |
 
-Продажа билетов на мероприятия требует отдельного уточнения и не включается в
-первую миграцию, пока не подтвержден сценарий D-10.
+Sprzedaż biletów na wydarzenia wymaga osobnego doprecyzowania i nie wchodzi do
+pierwszej migracji, dopóki scenariusz D-10 nie zostanie potwierdzony.
 
 ### `notification_outbox`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `event_type` | VARCHAR(100) | NOT NULL |
@@ -388,11 +388,11 @@ erDiagram
 | `last_error` | VARCHAR(1000) | NULL |
 | `created_at` | DATETIME(6) | NOT NULL |
 
-Индекс: `(status, available_at)`.
+Indeks: `(status, available_at)`.
 
 ### `audit_logs`
 
-| Поле | Тип | Ограничения |
+| Pole | Typ | Ograniczenia |
 |---|---|---|
 | `id` | BIGINT UNSIGNED | PK |
 | `actor_user_id` | BIGINT UNSIGNED | NULL, FK users |
@@ -403,34 +403,33 @@ erDiagram
 | `ip_address` | VARCHAR(45) | NULL |
 | `created_at` | DATETIME(6) | NOT NULL |
 
-Индексы: `(actor_user_id, created_at)`, `(entity_type, entity_id)`.
+Indeksy: `(actor_user_id, created_at)`, `(entity_type, entity_id)`.
 
-## 4. Целостность данных
+## 4. Integralność danych
 
-Часть правил обеспечивается БД:
+Część zasad jest zapewniana przez bazę danych:
 
-- уникальность email, токенов и внешних идентификаторов платежа;
-- уникальность бронирования и отзыва клиента на занятие;
-- внешние ключи между агрегатами;
-- уникальная позиция в очереди;
-- неизменяемая финансовая история.
+- unikalność emaili, tokenów i zewnętrznych identyfikatorów płatności;
+- unikalność rezerwacji i opinii klienta dla danych zajęć;
+- klucze obce między agregatami;
+- unikalna pozycja w kolejce;
+- niezmienialna historia finansowa.
 
-Правила, требующие транзакционной проверки приложения:
+Zasady wymagające transakcyjnej weryfikacji po stronie aplikacji:
 
-- вместимость занятия;
-- невозможность одновременно находиться в брони и очереди;
-- действительность абонемента на дату занятия;
-- корректный переход статусов;
-- право инструктора менять посещаемость только своего занятия;
-- создание отзыва только при `PRESENT`;
-- совпадение суммы callback с заказом.
+- pojemność zajęć;
+- brak możliwości jednoczesnego bycia w rezerwacji i kolejce;
+- ważność karnetu w dniu zajęć;
+- poprawne przejścia statusów;
+- prawo instruktora do zmiany obecności tylko na własnych zajęciach;
+- tworzenie opinii wyłącznie przy `PRESENT`;
+- zgodność kwoty callbacku z zamówieniem.
 
-## 5. Удаление и хранение
+## 5. Usuwanie i przechowywanie
 
-- Финансовые записи, ledger и audit физически не удаляются.
-- Пользователь деактивируется, а персональные данные могут быть
-  анонимизированы по утвержденной политике.
-- Занятия с бронированиями отменяются, но не удаляются.
-- Тип абонемента с продажами деактивируется.
-- Сроки хранения платежных payload и журналов определяются до production.
-
+- Rekordy finansowe, ledger i audit nie są fizycznie usuwane.
+- Użytkownik jest dezaktywowany, a dane osobowe mogą zostać zanonimizowane
+  zgodnie z zatwierdzoną polityką.
+- Zajęcia z rezerwacjami są anulowane, ale nie usuwane.
+- Typ karnetu ze sprzedażą jest dezaktywowany.
+- Terminy przechowywania payloadów płatności i logów są ustalane przed production.

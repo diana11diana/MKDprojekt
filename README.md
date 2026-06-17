@@ -1,27 +1,26 @@
-<<<<<<< HEAD
 # Dance School Management System
 
-Рабочий full-stack проект школы танцев:
+Roboczy projekt full-stack dla szkoły tańca:
 
-- `backend` — Java 21, Spring Boot, Spring Security, JPA, Flyway;
-- `frontend` — React, Material UI, Axios, Vite;
-- `mysql` — MySQL 8;
-- корневой `docker-compose.yml` запускает весь стек.
+- `backend` - Java 21, Spring Boot, Spring Security, JPA, Flyway;
+- `frontend` - React, Material UI, Axios, Vite;
+- `mysql` - MySQL 8;
+- główny `docker-compose.yml` uruchamia cały stos.
 
-## Запуск через Docker
+## Uruchomienie przez Docker
 
 ```powershell
 Copy-Item .env.example .env
 docker compose up --build
 ```
 
-После запуска:
+Po uruchomieniu:
 
-- приложение: http://localhost:3000
+- aplikacja: http://localhost:3000
 - backend API: http://localhost:8080/api/v1/classes
 - Swagger: http://localhost:8080/swagger-ui.html
 
-## Локальная разработка frontend
+## Lokalny development frontendu
 
 ```powershell
 Set-Location frontend
@@ -29,31 +28,31 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-## Текущий функционал
+## Aktualna funkcjonalność
 
-- стартовая адаптивная страница;
-- загрузка расписания из REST API;
-- фильтрация по направлению;
-- регистрация и подтверждение email одноразовым токеном;
-- вход с BCrypt и блокировкой после пяти неверных попыток;
-- JWT access token и ротируемый refresh token в HttpOnly cookie;
-- защищенный личный профиль и выход;
-- страницы регистрации, входа и профиля;
-- редактирование личных данных;
-- административная панель пользователей, инструкторов и расписания;
-- управление ролями и статусами пользователей;
-- создание профилей инструкторов;
-- создание, публикация и отмена занятий;
-- Spring Security и CORS;
-- схема MySQL через Flyway;
-- демонстрационные занятия;
-- Docker-сборка frontend и backend.
+- responsywna strona startowa;
+- wczytywanie grafiku z REST API;
+- filtrowanie według stylu;
+- rejestracja i potwierdzanie adresu email jednorazowym tokenem;
+- logowanie z użyciem BCrypt i blokadą po pięciu błędnych próbach;
+- JWT access token oraz rotowany refresh token w ciasteczku `HttpOnly`;
+- chroniony profil użytkownika i wylogowanie;
+- strony rejestracji, logowania i profilu;
+- edycja danych osobowych;
+- panel administracyjny użytkowników, instruktorów i grafiku;
+- zarządzanie rolami i statusami użytkowników;
+- tworzenie profili instruktorów;
+- tworzenie, publikacja i anulowanie zajęć;
+- Spring Security i CORS;
+- schemat MySQL zarządzany przez Flyway;
+- przykładowe zajęcia demonstracyjne;
+- dockerowy build frontendu i backendu.
 
-В локальной среде токен подтверждения email возвращается frontend и применяется
-автоматически. В production следует установить `EXPOSE_VERIFICATION_TOKEN=false`
-и подключить отправку ссылки через SMTP.
+W środowisku lokalnym token potwierdzenia email wraca do frontendu i jest
+stosowany automatycznie. W środowisku production należy ustawić
+`EXPOSE_VERIFICATION_TOKEN=false` i podłączyć wysyłkę linków przez SMTP.
 
-Для создания первого администратора задайте:
+Aby utworzyć pierwszego administratora, ustaw:
 
 ```text
 BOOTSTRAP_ADMIN_ENABLED=true
@@ -61,11 +60,8 @@ ADMIN_EMAIL=admin@dsms.local
 ADMIN_PASSWORD=Admin1234
 ```
 
-В Docker Compose bootstrap включён для локальной разработки. Пароль необходимо
-заменить перед любым публичным развертыванием.
+W Docker Compose bootstrap jest włączony dla lokalnego developmentu. Hasło
+należy zmienić przed jakimkolwiek publicznym wdrożeniem.
 
-Следующий функциональный блок: бронирование занятий, лист ожидания и учет
-абонементов.
-=======
-# inz
->>>>>>> 5cf0b596b45f63574323f689ad83db3e4e66c9c5
+Kolejny blok funkcjonalny: rezerwacje zajęć, lista oczekujących i rozliczanie
+karnetów.

@@ -1,14 +1,16 @@
-package com.dsms.booking;
+package com.dsms.review;
 
 import com.dsms.schedule.ClassSession;
 import com.dsms.user.User;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "waiting_list")
-public class WaitingListEntry {
+@Table(name = "class_reviews")
+public class Review {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,11 +25,14 @@ public class WaitingListEntry {
     private ClassSession classSession;
 
     @Column(nullable = false)
-    private int position;
+    private int rating;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private WaitingListStatus status;
+    @Column(length = 2000)
+    private String comment;
+
+    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt ASC")
+    private List<ReviewReply> replies = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -35,14 +40,14 @@ public class WaitingListEntry {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected WaitingListEntry() {
+    protected Review() {
     }
 
-    public WaitingListEntry(User user, ClassSession classSession, int position) {
+    public Review(User user, ClassSession classSession, int rating, String comment) {
         this.user = user;
         this.classSession = classSession;
-        this.position = position;
-        this.status = WaitingListStatus.WAITING;
+        this.rating = rating;
+        this.comment = comment;
     }
 
     @PrePersist
@@ -57,21 +62,10 @@ public class WaitingListEntry {
         updatedAt = Instant.now();
     }
 
-    public void promote() {
-        status = WaitingListStatus.PROMOTED;
-    }
-
-    public void cancel() {
-        status = WaitingListStatus.CANCELLED;
-    }
-
-    public void expire() {
-        status = WaitingListStatus.EXPIRED;
-    }
-
-    public void rejoin(int position) {
-        this.position = position;
-        this.status = WaitingListStatus.WAITING;
+    public ReviewReply addReply(User author, String body) {
+        ReviewReply reply = new ReviewReply(this, author, author.getRole(), body);
+        replies.add(reply);
+        return reply;
     }
 
     public Long getId() {
@@ -86,12 +80,16 @@ public class WaitingListEntry {
         return classSession;
     }
 
-    public int getPosition() {
-        return position;
+    public int getRating() {
+        return rating;
     }
 
-    public WaitingListStatus getStatus() {
-        return status;
+    public String getComment() {
+        return comment;
+    }
+
+    public List<ReviewReply> getReplies() {
+        return replies;
     }
 
     public Instant getCreatedAt() {

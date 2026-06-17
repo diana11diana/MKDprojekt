@@ -41,8 +41,8 @@ public class PassOrderService {
         notificationService.notify(
                 user,
                 NotificationType.PASS_ORDER_CREATED,
-                "Заказ создан",
-                "Заказ на абонемент \"" + passType.getName() + "\" ожидает оплаты."
+                "Zamówienie utworzone",
+                "Zamówienie na karnet \"" + passType.getName() + "\" oczekuje na płatność."
         );
         return PassOrderResponse.from(order);
     }
@@ -92,8 +92,8 @@ public class PassOrderService {
         notificationService.notify(
                 order.getUser(),
                 NotificationType.PASS_ORDER_PAID,
-                "Оплата подтверждена",
-                "Абонемент \"" + order.getPassType().getName() + "\" активирован."
+                "Płatność potwierdzona",
+                "Karnet \"" + order.getPassType().getName() + "\" został aktywowany."
         );
         return PassOrderResponse.from(order);
     }
@@ -106,8 +106,8 @@ public class PassOrderService {
         notificationService.notify(
                 order.getUser(),
                 NotificationType.PASS_ORDER_CANCELLED,
-                "Заказ отменён",
-                "Заказ на абонемент \"" + order.getPassType().getName() + "\" отменён."
+                "Zamówienie anulowane",
+                "Zamówienie na karnet \"" + order.getPassType().getName() + "\" zostało anulowane."
         );
     }
 

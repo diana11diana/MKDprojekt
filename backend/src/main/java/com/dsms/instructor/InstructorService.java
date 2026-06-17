@@ -1,7 +1,12 @@
 package com.dsms.instructor;
 
 import com.dsms.auth.AuthException;
+import com.dsms.booking.ReservationRepository;
+import com.dsms.booking.ReservationStatus;
+import com.dsms.booking.WaitingListRepository;
+import com.dsms.booking.WaitingListStatus;
 import com.dsms.instructor.InstructorDtos.*;
+import com.dsms.schedule.ClassSessionRepository;
 import com.dsms.user.User;
 import com.dsms.user.UserRepository;
 import com.dsms.user.UserRole;
@@ -17,13 +22,22 @@ public class InstructorService {
 
     private final InstructorProfileRepository profileRepository;
     private final UserRepository userRepository;
+    private final ClassSessionRepository classSessionRepository;
+    private final ReservationRepository reservationRepository;
+    private final WaitingListRepository waitingListRepository;
 
     public InstructorService(
             InstructorProfileRepository profileRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            ClassSessionRepository classSessionRepository,
+            ReservationRepository reservationRepository,
+            WaitingListRepository waitingListRepository
     ) {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
+        this.classSessionRepository = classSessionRepository;
+        this.reservationRepository = reservationRepository;
+        this.waitingListRepository = waitingListRepository;
     }
 
     @Transactional(readOnly = true)
@@ -40,6 +54,56 @@ public class InstructorService {
                 .stream()
                 .map(InstructorResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public InstructorDashboardResponse dashboard(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AuthException(HttpStatus.NOT_FOUND, "User not found"));
+        InstructorProfile profile = profileRepository.findByUserId(user.getId()).orElse(null);
+        if (profile == null) {
+            return new InstructorDashboardResponse(
+                    user.getId(),
+                    null,
+                    user.getFirstName(),
+                    user.getLastName(),
+                    null,
+                    null,
+                    List.of()
+            );
+        }
+
+        List<InstructorClassResponse> classes = classSessionRepository
+                .findByInstructorIdOrderByStartAtAsc(profile.getId())
+                .stream()
+                .map(session -> InstructorClassResponse.from(
+                        session,
+                        reservationRepository.findInstructorParticipants(
+                                        session.getId(),
+                                        ReservationStatus.CONFIRMED
+                                )
+                                .stream()
+                                .map(InstructorParticipantResponse::from)
+                                .toList(),
+                        waitingListRepository.findInstructorEntries(
+                                        session.getId(),
+                                        WaitingListStatus.WAITING
+                                )
+                                .stream()
+                                .map(InstructorWaitingListResponse::from)
+                                .toList()
+                ))
+                .toList();
+
+        return new InstructorDashboardResponse(
+                user.getId(),
+                profile.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                profile.getSpecialization(),
+                profile.getDescription(),
+                classes
+        );
     }
 
     @Transactional
@@ -81,4 +145,3 @@ public class InstructorService {
         return description == null || description.isBlank() ? null : description.trim();
     }
 }
-

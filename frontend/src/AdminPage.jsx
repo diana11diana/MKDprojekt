@@ -10,6 +10,7 @@ import {
   DialogTitle,
   MenuItem,
   Paper,
+  Rating,
   Stack,
   Switch,
   Tab,
@@ -36,15 +37,55 @@ import {
   fetchAdminClasses,
   fetchAdminPassOrders,
   fetchAdminPassTypes,
+  fetchAdminReviews,
   fetchAdminUsers,
   fetchInstructors,
   getApiError,
   grantUserPass,
   publishClassSession,
+  replyToAdminReview,
   updateInstructor,
   updatePassType,
 } from './api'
 import { useAuth } from './auth-context'
+
+const roleLabels = {
+  CLIENT: 'Klient',
+  INSTRUCTOR: 'Instruktor',
+  ADMIN: 'Administrator',
+}
+
+const userStatusLabels = {
+  PENDING: 'Oczekujący',
+  ACTIVE: 'Aktywny',
+  BLOCKED: 'Zablokowany',
+  DEACTIVATED: 'Dezaktywowany',
+}
+
+const classStatusLabels = {
+  DRAFT: 'Szkic',
+  PUBLISHED: 'Opublikowane',
+  CANCELLED: 'Anulowane',
+  COMPLETED: 'Zakończone',
+}
+
+const passOrderStatusLabels = {
+  PENDING_PAYMENT: 'Oczekuje na płatność',
+  PAID: 'Opłacone',
+  CANCELLED: 'Anulowane',
+}
+
+const levelLabels = {
+  BEGINNER: 'Początkujący',
+  INTERMEDIATE: 'Średniozaawansowany',
+  ADVANCED: 'Zaawansowany',
+  ALL: 'Wszystkie poziomy',
+}
+
+const replyRoleLabels = {
+  INSTRUCTOR: 'Instruktor',
+  ADMIN: 'Administrator',
+}
 
 const emptyInstructor = {
   userId: '',
@@ -87,11 +128,16 @@ export default function AdminPage() {
   const [classes, setClasses] = useState([])
   const [passTypes, setPassTypes] = useState([])
   const [passOrders, setPassOrders] = useState([])
+  const [reviews, setReviews] = useState([])
   const [error, setError] = useState('')
   const [instructorDialog, setInstructorDialog] = useState(false)
   const [classDialog, setClassDialog] = useState(false)
   const [passDialog, setPassDialog] = useState(false)
   const [grantDialog, setGrantDialog] = useState(false)
+  const [reviewDialog, setReviewDialog] = useState(false)
+  const [reviewReplyBody, setReviewReplyBody] = useState('')
+  const [selectedReview, setSelectedReview] = useState(null)
+  const [replySubmitting, setReplySubmitting] = useState(false)
   const [instructorForm, setInstructorForm] = useState(emptyInstructor)
   const [classForm, setClassForm] = useState(emptyClass)
   const [passForm, setPassForm] = useState(emptyPassType)
@@ -100,20 +146,22 @@ export default function AdminPage() {
   const load = async () => {
     setError('')
     try {
-      const [usersData, instructorsData, classesData, passTypeData, passOrderData] = await Promise.all([
+      const [usersData, instructorsData, classesData, passTypeData, passOrderData, reviewData] = await Promise.all([
         fetchAdminUsers(),
         fetchInstructors(true),
         fetchAdminClasses(),
         fetchAdminPassTypes(),
         fetchAdminPassOrders(),
+        fetchAdminReviews(),
       ])
       setUsers(usersData)
       setInstructors(instructorsData)
       setClasses(classesData)
       setPassTypes(passTypeData)
       setPassOrders(passOrderData)
+      setReviews(reviewData)
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось загрузить административные данные'))
+      setError(getApiError(requestError, 'Nie udało się załadować danych administracyjnych'))
     }
   }
 
@@ -147,7 +195,7 @@ export default function AdminPage() {
         : await changeUserStatus(id, value)
       setUsers((current) => current.map((item) => item.id === id ? updated : item))
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось обновить пользователя'))
+      setError(getApiError(requestError, 'Nie udało się zaktualizować użytkownika'))
     }
   }
 
@@ -161,7 +209,7 @@ export default function AdminPage() {
       setInstructorForm(emptyInstructor)
       await load()
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось создать инструктора'))
+      setError(getApiError(requestError, 'Nie udało się utworzyć instruktora'))
     }
   }
 
@@ -175,7 +223,7 @@ export default function AdminPage() {
       setInstructors((current) =>
         current.map((item) => item.id === instructor.id ? updated : item))
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось обновить инструктора'))
+      setError(getApiError(requestError, 'Nie udało się zaktualizować instruktora'))
     }
   }
 
@@ -192,7 +240,7 @@ export default function AdminPage() {
       setClassForm(emptyClass)
       await load()
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось создать занятие'))
+      setError(getApiError(requestError, 'Nie udało się utworzyć zajęć'))
     }
   }
 
@@ -203,7 +251,7 @@ export default function AdminPage() {
         : await cancelClassSession(id)
       setClasses((current) => current.map((item) => item.id === id ? updated : item))
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось изменить статус занятия'))
+      setError(getApiError(requestError, 'Nie udało się zmienić statusu zajęć'))
     }
   }
 
@@ -221,7 +269,7 @@ export default function AdminPage() {
       setPassForm(emptyPassType)
       await load()
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось создать абонемент'))
+      setError(getApiError(requestError, 'Nie udało się utworzyć karnetu'))
     }
   }
 
@@ -233,7 +281,7 @@ export default function AdminPage() {
       }))
       setPassTypes((current) => current.map((item) => item.id === passType.id ? updated : item))
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось обновить абонемент'))
+      setError(getApiError(requestError, 'Nie udało się zaktualizować karnetu'))
     }
   }
 
@@ -247,7 +295,7 @@ export default function AdminPage() {
       setGrantDialog(false)
       setGrantForm(emptyGrant)
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось выдать абонемент'))
+      setError(getApiError(requestError, 'Nie udało się przyznać karnetu'))
     }
   }
 
@@ -257,7 +305,7 @@ export default function AdminPage() {
       setPassOrders((current) => current.map((item) => item.id === id ? updated : item))
       await load()
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось подтвердить оплату'))
+      setError(getApiError(requestError, 'Nie udało się potwierdzić płatności'))
     }
   }
 
@@ -266,7 +314,35 @@ export default function AdminPage() {
       const updated = await cancelAdminPassOrder(id)
       setPassOrders((current) => current.map((item) => item.id === id ? updated : item))
     } catch (requestError) {
-      setError(getApiError(requestError, 'Не удалось отменить заказ'))
+      setError(getApiError(requestError, 'Nie udało się anulować zamówienia'))
+    }
+  }
+
+  const openReplyDialog = (review) => {
+    setSelectedReview(review)
+    setReviewReplyBody('')
+    setReviewDialog(true)
+  }
+
+  const submitReviewReply = async () => {
+    if (!selectedReview) {
+      return
+    }
+    if (!reviewReplyBody.trim()) {
+      setError('Wpisz treść odpowiedzi.')
+      return
+    }
+    setReplySubmitting(true)
+    try {
+      const updated = await replyToAdminReview(selectedReview.id, reviewReplyBody.trim())
+      setReviews((current) => current.map((item) => item.id === updated.id ? updated : item))
+      setReviewDialog(false)
+      setSelectedReview(null)
+      setReviewReplyBody('')
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Nie udało się zapisać odpowiedzi'))
+    } finally {
+      setReplySubmitting(false)
     }
   }
 
@@ -274,15 +350,15 @@ export default function AdminPage() {
     <Container maxWidth="xl" sx={{ py: 6 }}>
       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" gap={2}>
         <Box>
-          <Typography variant="h2" fontSize={{ xs: 38, md: 52 }}>Администрирование</Typography>
-          <Typography color="text.secondary">Пользователи, команда и расписание</Typography>
+          <Typography variant="h2" fontSize={{ xs: 38, md: 52 }}>Administracja</Typography>
+          <Typography color="text.secondary">Użytkownicy, zespół i grafik</Typography>
         </Box>
-        {tab === 1 && <Button variant="contained" onClick={() => setInstructorDialog(true)}>Добавить инструктора</Button>}
-        {tab === 2 && <Button variant="contained" onClick={() => setClassDialog(true)}>Создать занятие</Button>}
+        {tab === 1 && <Button variant="contained" onClick={() => setInstructorDialog(true)}>Dodaj instruktora</Button>}
+        {tab === 2 && <Button variant="contained" onClick={() => setClassDialog(true)}>Utwórz zajęcia</Button>}
         {tab === 3 && (
           <Stack direction="row" spacing={1}>
-            <Button variant="outlined" onClick={() => setGrantDialog(true)}>Выдать абонемент</Button>
-            <Button variant="contained" onClick={() => setPassDialog(true)}>Создать абонемент</Button>
+            <Button variant="outlined" onClick={() => setGrantDialog(true)}>Przyznaj karnet</Button>
+            <Button variant="contained" onClick={() => setPassDialog(true)}>Utwórz karnet</Button>
           </Stack>
         )}
       </Stack>
@@ -291,10 +367,11 @@ export default function AdminPage() {
 
       <Paper variant="outlined" sx={{ mt: 4 }}>
         <Tabs value={tab} onChange={(_, value) => setTab(value)} variant="scrollable">
-          <Tab label="Пользователи" />
-          <Tab label="Инструкторы" />
-          <Tab label="Расписание" />
-          <Tab label="Абонементы" />
+          <Tab label="Użytkownicy" />
+          <Tab label="Instruktorzy" />
+          <Tab label="Grafik" />
+          <Tab label="Karnety" />
+          <Tab label="Opinie" />
         </Tabs>
         <Box sx={{ p: { xs: 1, md: 3 } }}>
           {tab === 0 && <UsersTable users={users} mutateUser={mutateUser} />}
@@ -306,6 +383,7 @@ export default function AdminPage() {
               <PassTypesTable passTypes={passTypes} toggle={togglePassType} />
             </Stack>
           )}
+          {tab === 4 && <ReviewsPanel reviews={reviews} openReplyDialog={openReplyDialog} />}
         </Box>
       </Paper>
 
@@ -341,7 +419,103 @@ export default function AdminPage() {
         close={() => setGrantDialog(false)}
         submit={submitGrant}
       />
+
+      <Dialog open={reviewDialog} onClose={() => setReviewDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Odpowiedź na opinię</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            {selectedReview && (
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Typography fontWeight={700}>{selectedReview.clientName}</Typography>
+                <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                  {selectedReview.classTitle} · {new Date(selectedReview.createdAt).toLocaleString('pl-PL')}
+                </Typography>
+                <Rating value={selectedReview.rating} readOnly sx={{ mt: 1.5 }} />
+                {selectedReview.comment && <Typography sx={{ mt: 1.5 }}>{selectedReview.comment}</Typography>}
+              </Paper>
+            )}
+            <TextField
+              multiline
+              minRows={4}
+              label="Treść odpowiedzi"
+              value={reviewReplyBody}
+              onChange={(event) => setReviewReplyBody(event.target.value)}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReviewDialog(false)}>Anuluj</Button>
+          <Button variant="contained" onClick={submitReviewReply} disabled={replySubmitting}>
+            Odpowiedz
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
+  )
+}
+
+function ReviewRepliesList({ replies }) {
+  if (!replies?.length) {
+    return <Typography color="text.secondary" variant="body2" sx={{ mt: 1.5 }}>Brak odpowiedzi.</Typography>
+  }
+
+  return (
+    <Stack spacing={1.25} sx={{ mt: 1.5 }}>
+      {replies.map((reply) => (
+        <Paper key={reply.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'rgba(179, 136, 103, 0.05)' }}>
+          <Typography fontWeight={700}>
+            {replyRoleLabels[reply.authorRole] || reply.authorRole}: {reply.authorName}
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 0.75 }}>{reply.body}</Typography>
+          <Typography color="text.secondary" variant="caption" sx={{ mt: 0.75, display: 'block' }}>
+            {new Date(reply.createdAt).toLocaleString('pl-PL')}
+          </Typography>
+        </Paper>
+      ))}
+    </Stack>
+  )
+}
+
+function ReviewsPanel({ reviews, openReplyDialog }) {
+  return (
+    <Stack spacing={2}>
+      <Box>
+        <Typography variant="h5">Opinie klientów o instruktorach</Typography>
+        <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+          Tutaj administrator może przeglądać oceny i odpowiadać na komentarze klientów.
+        </Typography>
+      </Box>
+
+      {reviews.length === 0 ? (
+        <Paper variant="outlined" sx={{ p: 3 }}>
+          <Typography color="text.secondary">Nie ma jeszcze żadnych opinii.</Typography>
+        </Paper>
+      ) : (
+        reviews.map((review) => (
+          <Paper variant="outlined" sx={{ p: 2.5 }} key={review.id}>
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" gap={2}>
+              <Box>
+                <Typography fontWeight={700}>{review.clientName}</Typography>
+                <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                  {review.classTitle} · {review.instructorName}
+                </Typography>
+                <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
+                  {new Date(review.createdAt).toLocaleString('pl-PL')}
+                </Typography>
+              </Box>
+              <Box textAlign={{ md: 'right' }}>
+                <Rating value={review.rating} readOnly />
+                <Button sx={{ mt: { md: 1 } }} onClick={() => openReplyDialog(review)}>
+                  Odpowiedz
+                </Button>
+              </Box>
+            </Stack>
+            {review.comment && <Typography sx={{ mt: 1.5 }}>{review.comment}</Typography>}
+            <ReviewRepliesList replies={review.replies} />
+          </Paper>
+        ))
+      )}
+    </Stack>
   )
 }
 
@@ -351,10 +525,10 @@ function UsersTable({ users, mutateUser }) {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Пользователь</TableCell>
+            <TableCell>Użytkownik</TableCell>
             <TableCell>Email</TableCell>
-            <TableCell>Роль</TableCell>
-            <TableCell>Статус</TableCell>
+            <TableCell>Rola</TableCell>
+            <TableCell>Status</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -370,7 +544,7 @@ function UsersTable({ users, mutateUser }) {
                   onChange={(event) => mutateUser(item.id, 'role', event.target.value)}
                 >
                   {['CLIENT', 'INSTRUCTOR', 'ADMIN'].map((role) =>
-                    <MenuItem key={role} value={role}>{role}</MenuItem>)}
+                    <MenuItem key={role} value={role}>{roleLabels[role] || role}</MenuItem>)}
                 </TextField>
               </TableCell>
               <TableCell>
@@ -381,7 +555,7 @@ function UsersTable({ users, mutateUser }) {
                   onChange={(event) => mutateUser(item.id, 'status', event.target.value)}
                 >
                   {['PENDING', 'ACTIVE', 'BLOCKED', 'DEACTIVATED'].map((status) =>
-                    <MenuItem key={status} value={status}>{status}</MenuItem>)}
+                    <MenuItem key={status} value={status}>{userStatusLabels[status] || status}</MenuItem>)}
                 </TextField>
               </TableCell>
             </TableRow>
@@ -398,10 +572,10 @@ function InstructorsTable({ instructors, toggle }) {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Инструктор</TableCell>
-            <TableCell>Специализация</TableCell>
-            <TableCell>Описание</TableCell>
-            <TableCell>Публичный профиль</TableCell>
+            <TableCell>Instruktor</TableCell>
+            <TableCell>Specjalizacja</TableCell>
+            <TableCell>Opis</TableCell>
+            <TableCell>Profil publiczny</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -427,12 +601,12 @@ function ClassesTable({ classes, transition }) {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Занятие</TableCell>
-            <TableCell>Инструктор</TableCell>
-            <TableCell>Начало</TableCell>
-            <TableCell>Места</TableCell>
-            <TableCell>Статус</TableCell>
-            <TableCell>Действия</TableCell>
+            <TableCell>Zajęcia</TableCell>
+            <TableCell>Instruktor</TableCell>
+            <TableCell>Początek</TableCell>
+            <TableCell>Miejsca</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Akcje</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -440,16 +614,16 @@ function ClassesTable({ classes, transition }) {
             <TableRow key={item.id}>
               <TableCell>{item.title}<br /><small>{item.danceStyle}</small></TableCell>
               <TableCell>{item.instructorName}</TableCell>
-              <TableCell>{new Date(item.startAt).toLocaleString('ru-RU')}</TableCell>
+              <TableCell>{new Date(item.startAt).toLocaleString('pl-PL')}</TableCell>
               <TableCell>{item.availablePlaces}/{item.capacity}</TableCell>
-              <TableCell>{item.status}</TableCell>
+              <TableCell>{classStatusLabels[item.status] || item.status}</TableCell>
               <TableCell>
                 <Stack direction="row" spacing={1}>
                   {item.status === 'DRAFT' && (
-                    <Button size="small" onClick={() => transition(item.id, 'publish')}>Опубликовать</Button>
+                    <Button size="small" onClick={() => transition(item.id, 'publish')}>Opublikuj</Button>
                   )}
                   {!['CANCELLED', 'COMPLETED'].includes(item.status) && (
-                    <Button size="small" color="error" onClick={() => transition(item.id, 'cancel')}>Отменить</Button>
+                    <Button size="small" color="error" onClick={() => transition(item.id, 'cancel')}>Anuluj</Button>
                   )}
                 </Stack>
               </TableCell>
@@ -467,19 +641,19 @@ function PassTypesTable({ passTypes, toggle }) {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Абонемент</TableCell>
-            <TableCell>Тип</TableCell>
-            <TableCell>Срок</TableCell>
-            <TableCell>Цена</TableCell>
-            <TableCell>Активен</TableCell>
+            <TableCell>Karnet</TableCell>
+            <TableCell>Typ</TableCell>
+            <TableCell>Okres</TableCell>
+            <TableCell>Cena</TableCell>
+            <TableCell>Aktywny</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {passTypes.map((item) => (
             <TableRow key={item.id}>
-              <TableCell>{item.name}<br /><small>{item.description || 'без описания'}</small></TableCell>
-              <TableCell>{item.type === 'UNLIMITED' ? 'Безлимит' : `${item.visitCount} занятий`}</TableCell>
-              <TableCell>{item.validityDays} дней</TableCell>
+              <TableCell>{item.name}<br /><small>{item.description || 'bez opisu'}</small></TableCell>
+              <TableCell>{item.type === 'UNLIMITED' ? 'Bez limitu' : `${item.visitCount} wejść`}</TableCell>
+              <TableCell>{item.validityDays} dni</TableCell>
               <TableCell>{item.price} {item.currency}</TableCell>
               <TableCell>
                 <Switch checked={item.active} onChange={() => toggle(item)} />
@@ -495,17 +669,17 @@ function PassTypesTable({ passTypes, toggle }) {
 function PassOrdersTable({ orders, pay, cancel }) {
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 2 }}>Заказы абонементов</Typography>
+      <Typography variant="h5" sx={{ mb: 2 }}>Zamówienia karnetów</Typography>
       <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Клиент</TableCell>
-              <TableCell>Абонемент</TableCell>
-              <TableCell>Сумма</TableCell>
-              <TableCell>Статус</TableCell>
-              <TableCell>Создан</TableCell>
-              <TableCell>Действия</TableCell>
+              <TableCell>Klient</TableCell>
+              <TableCell>Karnet</TableCell>
+              <TableCell>Kwota</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Utworzono</TableCell>
+              <TableCell>Akcje</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -514,13 +688,13 @@ function PassOrdersTable({ orders, pay, cancel }) {
                 <TableCell>{item.userName}</TableCell>
                 <TableCell>{item.passName}</TableCell>
                 <TableCell>{item.amount} {item.currency}</TableCell>
-                <TableCell>{item.status}</TableCell>
-                <TableCell>{new Date(item.createdAt).toLocaleString('ru-RU')}</TableCell>
+                <TableCell>{passOrderStatusLabels[item.status] || item.status}</TableCell>
+                <TableCell>{new Date(item.createdAt).toLocaleString('pl-PL')}</TableCell>
                 <TableCell>
                   {item.status === 'PENDING_PAYMENT' && (
                     <Stack direction="row" spacing={1}>
-                      <Button size="small" onClick={() => pay(item.id)}>Подтвердить оплату</Button>
-                      <Button size="small" color="error" onClick={() => cancel(item.id)}>Отменить</Button>
+                      <Button size="small" onClick={() => pay(item.id)}>Potwierdź płatność</Button>
+                      <Button size="small" color="error" onClick={() => cancel(item.id)}>Anuluj</Button>
                     </Stack>
                   )}
                 </TableCell>
@@ -536,12 +710,12 @@ function PassOrdersTable({ orders, pay, cancel }) {
 function InstructorDialog({ open, users, form, setForm, close, submit }) {
   return (
     <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
-      <DialogTitle>Новый инструктор</DialogTitle>
+      <DialogTitle>Nowy instruktor</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           <TextField
             select
-            label="Пользователь"
+            label="Użytkownik"
             value={form.userId}
             onChange={(event) => setForm({ ...form, userId: event.target.value })}
           >
@@ -552,12 +726,12 @@ function InstructorDialog({ open, users, form, setForm, close, submit }) {
             ))}
           </TextField>
           <TextField
-            label="Специализация"
+            label="Specjalizacja"
             value={form.specialization}
             onChange={(event) => setForm({ ...form, specialization: event.target.value })}
           />
           <TextField
-            label="Описание"
+            label="Opis"
             multiline
             minRows={3}
             value={form.description}
@@ -566,9 +740,9 @@ function InstructorDialog({ open, users, form, setForm, close, submit }) {
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={close}>Отмена</Button>
+        <Button onClick={close}>Anuluj</Button>
         <Button variant="contained" onClick={submit} disabled={!form.userId || !form.specialization}>
-          Создать
+          Utwórz
         </Button>
       </DialogActions>
     </Dialog>
@@ -578,33 +752,33 @@ function InstructorDialog({ open, users, form, setForm, close, submit }) {
 function ClassDialog({ open, instructors, form, setForm, close, submit }) {
   return (
     <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
-      <DialogTitle>Новое занятие</DialogTitle>
+      <DialogTitle>Nowe zajęcia</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField label="Название" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
-          <TextField label="Описание" multiline minRows={2} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
-          <TextField label="Направление" value={form.danceStyle} onChange={(event) => setForm({ ...form, danceStyle: event.target.value })} />
-          <TextField select label="Уровень" value={form.level} onChange={(event) => setForm({ ...form, level: event.target.value })}>
-            {['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'ALL'].map((level) => <MenuItem key={level} value={level}>{level}</MenuItem>)}
+          <TextField label="Nazwa" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+          <TextField label="Opis" multiline minRows={2} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+          <TextField label="Styl" value={form.danceStyle} onChange={(event) => setForm({ ...form, danceStyle: event.target.value })} />
+          <TextField select label="Poziom" value={form.level} onChange={(event) => setForm({ ...form, level: event.target.value })}>
+            {['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'ALL'].map((level) => <MenuItem key={level} value={level}>{levelLabels[level] || level}</MenuItem>)}
           </TextField>
-          <TextField select label="Инструктор" value={form.instructorId} onChange={(event) => setForm({ ...form, instructorId: event.target.value })}>
+          <TextField select label="Instruktor" value={form.instructorId} onChange={(event) => setForm({ ...form, instructorId: event.target.value })}>
             {instructors.map((item) => <MenuItem key={item.id} value={item.id}>{item.firstName} {item.lastName}</MenuItem>)}
           </TextField>
-          <TextField type="datetime-local" label="Дата и время" InputLabelProps={{ shrink: true }} value={form.startAt} onChange={(event) => setForm({ ...form, startAt: event.target.value })} />
+          <TextField type="datetime-local" label="Data i godzina" InputLabelProps={{ shrink: true }} value={form.startAt} onChange={(event) => setForm({ ...form, startAt: event.target.value })} />
           <Stack direction="row" spacing={2}>
-            <TextField fullWidth type="number" label="Вместимость" value={form.capacity} onChange={(event) => setForm({ ...form, capacity: event.target.value })} />
-            <TextField fullWidth type="number" label="Длительность, мин." value={form.durationMinutes} onChange={(event) => setForm({ ...form, durationMinutes: event.target.value })} />
+            <TextField fullWidth type="number" label="Pojemność" value={form.capacity} onChange={(event) => setForm({ ...form, capacity: event.target.value })} />
+            <TextField fullWidth type="number" label="Czas trwania, min" value={form.durationMinutes} onChange={(event) => setForm({ ...form, durationMinutes: event.target.value })} />
           </Stack>
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={close}>Отмена</Button>
+        <Button onClick={close}>Anuluj</Button>
         <Button
           variant="contained"
           onClick={submit}
           disabled={!form.title || !form.danceStyle || !form.instructorId || !form.startAt}
         >
-          Создать черновик
+          Utwórz szkic
         </Button>
       </DialogActions>
     </Dialog>
@@ -614,32 +788,32 @@ function ClassDialog({ open, instructors, form, setForm, close, submit }) {
 function PassTypeDialog({ open, form, setForm, close, submit }) {
   return (
     <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
-      <DialogTitle>Новый абонемент</DialogTitle>
+      <DialogTitle>Nowy karnet</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField label="Название" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-          <TextField label="Описание" multiline minRows={2} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
-          <TextField select label="Тип" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>
-            <MenuItem value="LIMITED">По количеству занятий</MenuItem>
-            <MenuItem value="UNLIMITED">Безлимит</MenuItem>
+          <TextField label="Nazwa" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+          <TextField label="Opis" multiline minRows={2} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+          <TextField select label="Typ" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>
+            <MenuItem value="LIMITED">Limit wejść</MenuItem>
+            <MenuItem value="UNLIMITED">Bez limitu</MenuItem>
           </TextField>
           {form.type === 'LIMITED' && (
-            <TextField type="number" label="Количество занятий" value={form.visitCount} onChange={(event) => setForm({ ...form, visitCount: event.target.value })} />
+            <TextField type="number" label="Liczba wejść" value={form.visitCount} onChange={(event) => setForm({ ...form, visitCount: event.target.value })} />
           )}
           <Stack direction="row" spacing={2}>
-            <TextField fullWidth type="number" label="Срок действия, дней" value={form.validityDays} onChange={(event) => setForm({ ...form, validityDays: event.target.value })} />
-            <TextField fullWidth type="number" label="Цена" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} />
+            <TextField fullWidth type="number" label="Okres ważności, dni" value={form.validityDays} onChange={(event) => setForm({ ...form, validityDays: event.target.value })} />
+            <TextField fullWidth type="number" label="Cena" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} />
           </Stack>
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={close}>Отмена</Button>
+        <Button onClick={close}>Anuluj</Button>
         <Button
           variant="contained"
           onClick={submit}
           disabled={!form.name || !form.validityDays || (form.type === 'LIMITED' && !form.visitCount)}
         >
-          Создать
+          Utwórz
         </Button>
       </DialogActions>
     </Dialog>
@@ -649,37 +823,37 @@ function PassTypeDialog({ open, form, setForm, close, submit }) {
 function GrantPassDialog({ open, users, passTypes, form, setForm, close, submit }) {
   return (
     <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
-      <DialogTitle>Выдать абонемент</DialogTitle>
+      <DialogTitle>Przyznaj karnet</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField select label="Клиент" value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })}>
+          <TextField select label="Klient" value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })}>
             {users.map((item) => (
               <MenuItem key={item.id} value={item.id}>
                 {item.firstName} {item.lastName} — {item.email}
               </MenuItem>
             ))}
           </TextField>
-          <TextField select label="Абонемент" value={form.passTypeId} onChange={(event) => setForm({ ...form, passTypeId: event.target.value })}>
+          <TextField select label="Karnet" value={form.passTypeId} onChange={(event) => setForm({ ...form, passTypeId: event.target.value })}>
             {passTypes.map((item) => (
               <MenuItem key={item.id} value={item.id}>
-                {item.name} · {item.type === 'UNLIMITED' ? 'безлимит' : `${item.visitCount} занятий`}
+                {item.name} · {item.type === 'UNLIMITED' ? 'bez limitu' : `${item.visitCount} wejść`}
               </MenuItem>
             ))}
           </TextField>
           <TextField
             type="datetime-local"
-            label="Действует с"
+            label="Ważny od"
             InputLabelProps={{ shrink: true }}
             value={form.validFrom}
             onChange={(event) => setForm({ ...form, validFrom: event.target.value })}
-            helperText="Если оставить пустым, начнётся с текущего момента"
+            helperText="Jeśli pozostawisz puste, zacznie obowiązywać od teraz"
           />
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={close}>Отмена</Button>
+        <Button onClick={close}>Anuluj</Button>
         <Button variant="contained" onClick={submit} disabled={!form.userId || !form.passTypeId}>
-          Выдать
+          Przyznaj
         </Button>
       </DialogActions>
     </Dialog>

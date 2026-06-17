@@ -1,20 +1,20 @@
-# DSMS: проектирование REST API
+# DSMS: projekt REST API
 
-## 1. Общие правила
+## 1. Zasady ogólne
 
-- Базовый путь: `/api/v1`.
-- Формат: JSON, кроме загрузки файлов и CSV.
-- Идентификаторы ресурсов: числовые `id`; заказы дополнительно имеют UUID
+- Bazowa ścieżka: `/api/v1`.
+- Format: JSON, z wyjątkiem uploadu plików i CSV.
+- Identyfikatory zasobów: numeryczne `id`; zamówienia dodatkowo mają UUID
   `publicId`.
-- Даты и время: ISO 8601 UTC, например `2026-06-15T16:30:00Z`.
-- Денежные суммы передаются строкой, например `"129.00"`.
-- Пагинация: `page`, `size`, `sort`.
-- Размер страницы по умолчанию 20, максимум 100.
-- Удаление исторических ресурсов заменяется деактивацией или отменой.
+- Daty i czas: ISO 8601 UTC, na przykład `2026-06-15T16:30:00Z`.
+- Kwoty pieniężne są przesyłane jako string, na przykład `"129.00"`.
+- Paginacja: `page`, `size`, `sort`.
+- Domyślny rozmiar strony to 20, maksimum 100.
+- Usuwanie zasobów historycznych jest zastępowane dezaktywacją albo anulowaniem.
 
-## 2. Формат ответа
+## 2. Format odpowiedzi
 
-Одиночный ресурс возвращается напрямую:
+Pojedynczy zasób jest zwracany bezpośrednio:
 
 ```json
 {
@@ -24,7 +24,7 @@
 }
 ```
 
-Страница:
+Strona:
 
 ```json
 {
@@ -36,7 +36,7 @@
 }
 ```
 
-Ошибка соответствует `application/problem+json`:
+Błąd jest zgodny z `application/problem+json`:
 
 ```json
 {
@@ -53,202 +53,201 @@
 }
 ```
 
-## 3. Статусы HTTP
+## 3. Statusy HTTP
 
-| Код | Использование |
+| Kod | Zastosowanie |
 |---|---|
-| 200 | успешное чтение или изменение |
-| 201 | ресурс создан |
-| 204 | успешная операция без тела |
-| 400 | некорректные параметры или переход статуса |
-| 401 | отсутствует или недействительна аутентификация |
-| 403 | недостаточно прав |
-| 404 | ресурс не найден |
-| 409 | конфликт состояния, дубликат или занятое место |
-| 422 | бизнес-правило не позволяет выполнить операцию |
-| 429 | превышен лимит запросов или попыток входа |
+| 200 | poprawny odczyt albo modyfikacja |
+| 201 | zasób utworzony |
+| 204 | poprawna operacja bez treści |
+| 400 | niepoprawne parametry albo niedozwolone przejście statusu |
+| 401 | brak autoryzacji albo nieważne uwierzytelnienie |
+| 403 | niewystarczające uprawnienia |
+| 404 | zasób nie został znaleziony |
+| 409 | konflikt stanu, duplikat albo zajęte miejsce |
+| 422 | zasada biznesowa nie pozwala wykonać operacji |
+| 429 | przekroczony limit żądań albo prób logowania |
 
 ## 4. Authentication API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| POST | `/auth/register` | Public | регистрация клиента |
-| POST | `/auth/verify-email` | Public | подтверждение email по токену |
-| POST | `/auth/resend-verification` | Public | повторное письмо |
-| POST | `/auth/login` | Public | вход |
-| POST | `/auth/refresh` | Cookie | обновление access token |
-| POST | `/auth/logout` | Authenticated | отзыв текущей сессии |
-| POST | `/auth/logout-all` | Authenticated | отзыв всех сессий |
-| POST | `/auth/forgot-password` | Public | запрос сброса пароля |
-| POST | `/auth/reset-password` | Public | установка нового пароля |
-| POST | `/auth/change-password` | Authenticated | смена пароля |
+| POST | `/auth/register` | Public | rejestracja klienta |
+| POST | `/auth/verify-email` | Public | potwierdzenie email przez token |
+| POST | `/auth/resend-verification` | Public | ponowna wysyłka wiadomości |
+| POST | `/auth/login` | Public | logowanie |
+| POST | `/auth/refresh` | Cookie | odświeżenie access tokena |
+| POST | `/auth/logout` | Authenticated | odwołanie bieżącej sesji |
+| POST | `/auth/logout-all` | Authenticated | odwołanie wszystkich sesji |
+| POST | `/auth/forgot-password` | Public | żądanie resetu hasła |
+| POST | `/auth/reset-password` | Public | ustawienie nowego hasła |
+| POST | `/auth/change-password` | Authenticated | zmiana hasła |
 
-Login имеет отдельный rate limit. Ответы восстановления пароля не раскрывают,
-существует ли указанный email.
+Logowanie ma osobny rate limit. Odpowiedzi resetu hasła nie ujawniają, czy
+podany email istnieje.
 
 ## 5. Profile and Users API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| GET | `/me` | Authenticated | текущий профиль |
-| PATCH | `/me` | Authenticated | изменение профиля |
-| POST | `/me/avatar` | Authenticated | загрузка фотографии |
-| DELETE | `/me/avatar` | Authenticated | удаление фотографии |
-| GET | `/admin/users` | ADMIN | список и фильтрация пользователей |
-| GET | `/admin/users/{id}` | ADMIN | данные пользователя |
-| PATCH | `/admin/users/{id}/status` | ADMIN | блокировка или активация |
-| PATCH | `/admin/users/{id}/role` | ADMIN | изменение роли |
+| GET | `/me` | Authenticated | aktualny profil |
+| PATCH | `/me` | Authenticated | zmiana profilu |
+| POST | `/me/avatar` | Authenticated | upload zdjęcia |
+| DELETE | `/me/avatar` | Authenticated | usunięcie zdjęcia |
+| GET | `/admin/users` | ADMIN | lista i filtrowanie użytkowników |
+| GET | `/admin/users/{id}` | ADMIN | dane użytkownika |
+| PATCH | `/admin/users/{id}/status` | ADMIN | blokada albo aktywacja |
+| PATCH | `/admin/users/{id}/role` | ADMIN | zmiana roli |
 
 ## 6. Instructors and Catalog API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| GET | `/instructors` | Public | публичный список инструкторов |
-| GET | `/instructors/{id}` | Public | профиль инструктора |
-| POST | `/admin/instructors` | ADMIN | создание профиля инструктора |
-| PATCH | `/admin/instructors/{id}` | ADMIN | изменение профиля |
-| GET | `/dance-styles` | Public | активные направления |
-| POST | `/admin/dance-styles` | ADMIN | создание направления |
-| PATCH | `/admin/dance-styles/{id}` | ADMIN | изменение направления |
-| PATCH | `/admin/dance-styles/{id}/status` | ADMIN | активация или деактивация |
+| GET | `/instructors` | Public | publiczna lista instruktorów |
+| GET | `/instructors/{id}` | Public | profil instruktora |
+| POST | `/admin/instructors` | ADMIN | utworzenie profilu instruktora |
+| PATCH | `/admin/instructors/{id}` | ADMIN | zmiana profilu |
+| GET | `/dance-styles` | Public | aktywne style |
+| POST | `/admin/dance-styles` | ADMIN | utworzenie stylu |
+| PATCH | `/admin/dance-styles/{id}` | ADMIN | zmiana stylu |
+| PATCH | `/admin/dance-styles/{id}/status` | ADMIN | aktywacja albo dezaktywacja |
 
 ## 7. Schedule API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| GET | `/classes` | Public | расписание с фильтрами |
-| GET | `/classes/{id}` | Public | карточка занятия |
-| POST | `/admin/classes` | ADMIN | создание занятия |
-| PATCH | `/admin/classes/{id}` | ADMIN | изменение занятия |
-| POST | `/admin/classes/{id}/publish` | ADMIN | публикация |
-| POST | `/admin/classes/{id}/cancel` | ADMIN | отмена |
-| GET | `/instructor/classes` | INSTRUCTOR | свои занятия |
-| GET | `/instructor/classes/{id}/participants` | INSTRUCTOR | участники своего занятия |
+| GET | `/classes` | Public | grafik z filtrami |
+| GET | `/classes/{id}` | Public | karta zajęć |
+| POST | `/admin/classes` | ADMIN | utworzenie zajęć |
+| PATCH | `/admin/classes/{id}` | ADMIN | zmiana zajęć |
+| POST | `/admin/classes/{id}/publish` | ADMIN | publikacja |
+| POST | `/admin/classes/{id}/cancel` | ADMIN | anulowanie |
+| GET | `/instructor/classes` | INSTRUCTOR | własne zajęcia |
+| GET | `/instructor/classes/{id}/participants` | INSTRUCTOR | uczestnicy własnych zajęć |
 
-Фильтры `GET /classes`:
+Filtry `GET /classes`:
 
 - `from`, `to`;
 - `instructorId`;
 - `danceStyleId`;
 - `level`;
 - `availability`;
-- стандартная пагинация и сортировка.
+- standardowa paginacja i sortowanie.
 
 ## 8. Booking API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| POST | `/classes/{id}/reservations` | CLIENT | забронировать или войти в очередь |
-| DELETE | `/classes/{id}/reservations/me` | CLIENT | отменить свою бронь |
-| DELETE | `/classes/{id}/waitlist/me` | CLIENT | выйти из очереди |
-| GET | `/me/reservations` | CLIENT | история бронирований |
-| GET | `/me/waitlist` | CLIENT | активные позиции в очереди |
-| GET | `/admin/classes/{id}/reservations` | ADMIN | брони и очередь занятия |
-| POST | `/admin/classes/{id}/reservations` | ADMIN | ручное бронирование клиента |
-| DELETE | `/admin/reservations/{id}` | ADMIN | административная отмена |
+| POST | `/classes/{id}/reservations` | CLIENT | rezerwacja albo dołączenie do kolejki |
+| DELETE | `/classes/{id}/reservations/me` | CLIENT | anulowanie własnej rezerwacji |
+| DELETE | `/classes/{id}/waitlist/me` | CLIENT | opuszczenie kolejki |
+| GET | `/me/reservations` | CLIENT | historia rezerwacji |
+| GET | `/me/waitlist` | CLIENT | aktywne pozycje w kolejce |
+| GET | `/admin/classes/{id}/reservations` | ADMIN | rezerwacje i kolejka zajęć |
+| POST | `/admin/classes/{id}/reservations` | ADMIN | ręczna rezerwacja dla klienta |
+| DELETE | `/admin/reservations/{id}` | ADMIN | administracyjne anulowanie |
 
-Ответ `POST /classes/{id}/reservations` возвращает один из статусов:
+Odpowiedź `POST /classes/{id}/reservations` zwraca jeden ze statusów:
 
 - `CONFIRMED`;
 - `WAITLISTED`.
 
-Для повторов клиент может передавать заголовок `Idempotency-Key`.
+Przy powtórzeniach klient może przekazać nagłówek `Idempotency-Key`.
 
 ## 9. Passes API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| GET | `/pass-types` | Public | доступные типы абонементов |
-| GET | `/pass-types/{id}` | Public | карточка абонемента |
-| GET | `/me/passes` | CLIENT | свои абонементы |
-| GET | `/me/passes/{id}/ledger` | CLIENT | история посещений абонемента |
-| POST | `/admin/pass-types` | ADMIN | создание типа |
-| PATCH | `/admin/pass-types/{id}` | ADMIN | изменение типа |
-| PATCH | `/admin/pass-types/{id}/status` | ADMIN | активация или деактивация |
-| POST | `/admin/user-passes/{id}/adjustments` | ADMIN | ручная корректировка с причиной |
+| GET | `/pass-types` | Public | dostępne typy karnetów |
+| GET | `/pass-types/{id}` | Public | karta karnetu |
+| GET | `/me/passes` | CLIENT | własne karnety |
+| GET | `/me/passes/{id}/ledger` | CLIENT | historia wejść dla karnetu |
+| POST | `/admin/pass-types` | ADMIN | utworzenie typu |
+| PATCH | `/admin/pass-types/{id}` | ADMIN | zmiana typu |
+| PATCH | `/admin/pass-types/{id}/status` | ADMIN | aktywacja albo dezaktywacja |
+| POST | `/admin/user-passes/{id}/adjustments` | ADMIN | ręczna korekta z uzasadnieniem |
 
 ## 10. Orders and Payments API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| POST | `/orders` | CLIENT | создать заказ на абонемент |
-| GET | `/orders/{publicId}` | Owner/ADMIN | состояние заказа |
-| POST | `/orders/{publicId}/payments` | Owner | начать оплату PayU |
-| POST | `/orders/{publicId}/cancel` | Owner | отменить неоплаченный заказ |
-| GET | `/me/payments` | CLIENT | история платежей |
-| GET | `/admin/payments` | ADMIN | поиск платежей |
-| GET | `/admin/payments/{id}` | ADMIN | данные платежа |
-| POST | `/payments/payu/notifications` | PayU | callback провайдера |
+| POST | `/orders` | CLIENT | utworzenie zamówienia na karnet |
+| GET | `/orders/{publicId}` | Owner/ADMIN | stan zamówienia |
+| POST | `/orders/{publicId}/payments` | Owner | rozpoczęcie płatności PayU |
+| POST | `/orders/{publicId}/cancel` | Owner | anulowanie nieopłaconego zamówienia |
+| GET | `/me/payments` | CLIENT | historia płatności |
+| GET | `/admin/payments` | ADMIN | wyszukiwanie płatności |
+| GET | `/admin/payments/{id}` | ADMIN | dane płatności |
+| POST | `/payments/payu/notifications` | PayU | callback dostawcy |
 
-Callback не использует JWT. Доступ определяется проверкой подписи PayU,
-идентификатора заказа, суммы и валюты.
+Callback nie używa JWT. Dostęp jest określany przez weryfikację podpisu PayU,
+identyfikatora zamówienia, kwoty i waluty.
 
 ## 11. Attendance API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| PUT | `/instructor/classes/{id}/attendance` | Instructor owner | пакетная отметка посещаемости |
-| GET | `/instructor/classes/{id}/attendance` | Instructor owner | посещаемость занятия |
-| PUT | `/admin/classes/{id}/attendance` | ADMIN | административная корректировка |
-| GET | `/me/attendance` | CLIENT | история посещений |
+| PUT | `/instructor/classes/{id}/attendance` | Instructor owner | pakietowe oznaczanie obecności |
+| GET | `/instructor/classes/{id}/attendance` | Instructor owner | obecność na zajęciach |
+| PUT | `/admin/classes/{id}/attendance` | ADMIN | korekta administracyjna |
+| GET | `/me/attendance` | CLIENT | historia obecności |
 
-Пакетный запрос содержит список `reservationId` и `PRESENT`/`ABSENT`.
-Изменение после установленного окна аудируется.
+Żądanie pakietowe zawiera listę `reservationId` oraz `PRESENT`/`ABSENT`.
+Zmiana po ustalonym oknie jest rejestrowana audytowo.
 
 ## 12. Reviews API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| GET | `/classes/{id}/reviews` | Public | видимые отзывы |
-| POST | `/classes/{id}/reviews` | CLIENT | создать отзыв |
-| PATCH | `/reviews/{id}` | Author | изменить свой отзыв |
-| DELETE | `/reviews/{id}` | Author | удалить свой отзыв |
-| PATCH | `/admin/reviews/{id}/visibility` | ADMIN | скрыть или показать |
+| GET | `/classes/{id}/reviews` | Public | widoczne opinie |
+| POST | `/classes/{id}/reviews` | CLIENT | utworzenie opinii |
+| PATCH | `/reviews/{id}` | Author | zmiana własnej opinii |
+| DELETE | `/reviews/{id}` | Author | usunięcie własnej opinii |
+| PATCH | `/admin/reviews/{id}/visibility` | ADMIN | ukrycie albo pokazanie |
 
 ## 13. Events API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| GET | `/events` | Public | опубликованные мероприятия |
-| GET | `/events/{id}` | Public | карточка мероприятия |
-| POST | `/admin/events` | ADMIN | создать мероприятие |
-| PATCH | `/admin/events/{id}` | ADMIN | изменить мероприятие |
-| POST | `/admin/events/{id}/publish` | ADMIN | опубликовать |
-| POST | `/admin/events/{id}/cancel` | ADMIN | отменить |
+| GET | `/events` | Public | opublikowane wydarzenia |
+| GET | `/events/{id}` | Public | karta wydarzenia |
+| POST | `/admin/events` | ADMIN | utworzenie wydarzenia |
+| PATCH | `/admin/events/{id}` | ADMIN | zmiana wydarzenia |
+| POST | `/admin/events/{id}/publish` | ADMIN | publikacja |
+| POST | `/admin/events/{id}/cancel` | ADMIN | anulowanie |
 
-Продажа билетов добавляется после уточнения сценария мероприятий.
+Sprzedaż biletów zostanie dodana po doprecyzowaniu scenariusza wydarzeń.
 
 ## 14. Reports API
 
-| Метод | Endpoint | Доступ | Назначение |
+| Metoda | Endpoint | Dostęp | Przeznaczenie |
 |---|---|---|---|
-| GET | `/admin/reports/revenue` | ADMIN | выручка |
-| GET | `/admin/reports/payments` | ADMIN | статусы платежей |
-| GET | `/admin/reports/pass-sales` | ADMIN | продажи абонементов |
-| GET | `/admin/reports/class-occupancy` | ADMIN | загрузка занятий |
-| GET | `/admin/reports/attendance` | ADMIN | посещения и неявки |
-| GET | `/admin/reports/dance-styles` | ADMIN | популярность направлений |
-| GET | `/admin/reports/clients` | ADMIN | активность клиентов |
-| GET | `/admin/reports/instructors` | ADMIN | статистика инструкторов |
-| GET | `/admin/reports/{report}/export` | ADMIN | CSV выбранного отчета |
+| GET | `/admin/reports/revenue` | ADMIN | przychód |
+| GET | `/admin/reports/payments` | ADMIN | statusy płatności |
+| GET | `/admin/reports/pass-sales` | ADMIN | sprzedaż karnetów |
+| GET | `/admin/reports/class-occupancy` | ADMIN | obłożenie zajęć |
+| GET | `/admin/reports/attendance` | ADMIN | obecności i nieobecności |
+| GET | `/admin/reports/dance-styles` | ADMIN | popularność stylów |
+| GET | `/admin/reports/clients` | ADMIN | aktywność klientów |
+| GET | `/admin/reports/instructors` | ADMIN | statystyki instruktorów |
+| GET | `/admin/reports/{report}/export` | ADMIN | CSV wybranego raportu |
 
-Все отчеты принимают `from` и `to`; дополнительные фильтры зависят от отчета.
+Wszystkie raporty przyjmują `from` i `to`; dodatkowe filtry zależą od raportu.
 
-## 15. Идемпотентность и конкурентность
+## 15. Idempotentność i współbieżność
 
-- `POST /orders` и создание платежа поддерживают `Idempotency-Key`.
-- Повторный PayU callback возвращает успешный ответ без повторного применения.
-- Бронирование защищается транзакционной блокировкой занятия.
-- Изменяемые административные ресурсы используют поле `version`; конфликт
-  версии возвращает `409 CONFLICT`.
+- `POST /orders` oraz tworzenie płatności wspierają `Idempotency-Key`.
+- Powtórzony callback PayU zwraca poprawną odpowiedź bez ponownego zastosowania.
+- Rezerwacja jest chroniona przez transakcyjną blokadę zajęć.
+- Zmienne zasoby administracyjne używają pola `version`; konflikt wersji
+  zwraca `409 CONFLICT`.
 
 ## 16. OpenAPI
 
-Backend публикует:
+Backend publikuje:
 
 - `/v3/api-docs`;
 - `/swagger-ui.html`.
 
-Контракт OpenAPI считается источником истины для DTO после начала backend.
-Из него можно генерировать типы и API-клиент frontend.
-
+Kontrakt OpenAPI jest traktowany jako źródło prawdy dla DTO po rozpoczęciu
+backendu. Na jego podstawie można generować typy i klienta API dla frontendu.

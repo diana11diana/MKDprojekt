@@ -20,8 +20,8 @@ public final class AuthDtos {
             @NotBlank
             @Size(min = 8, max = 72)
             @Pattern(
-                    regexp = "^(?=.*[A-ZА-Я])(?=.*\\d).+$",
-                    message = "Password must contain an uppercase letter and a digit"
+                    regexp = "^(?=.*\\p{Lu})(?=.*\\d).+$",
+                    message = "Hasło musi zawierać wielką literę i cyfrę"
             )
             String password
     ) {
@@ -69,4 +69,3 @@ public final class AuthDtos {
         }
     }
 }
-

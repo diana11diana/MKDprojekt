@@ -2,6 +2,7 @@ package com.dsms.instructor;
 
 import com.dsms.instructor.InstructorDtos.*;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,11 @@ public class InstructorController {
         return service.listAll();
     }
 
+    @GetMapping("/instructor/dashboard")
+    public InstructorDashboardResponse dashboard(Authentication authentication) {
+        return service.dashboard(authentication.getName());
+    }
+
     @PostMapping("/admin/instructors")
     public InstructorResponse create(@Valid @RequestBody CreateInstructorRequest request) {
         return service.create(request);
@@ -39,4 +45,3 @@ public class InstructorController {
         return service.update(id, request);
     }
 }
-

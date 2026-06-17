@@ -8,5 +8,6 @@ public enum NotificationType {
     PASS_ORDER_CREATED,
     PASS_ORDER_PAID,
     PASS_ORDER_CANCELLED,
-    PASS_GRANTED
+    PASS_GRANTED,
+    REVIEW_REPLY_ADDED
 }

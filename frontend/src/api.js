@@ -86,6 +86,16 @@ export async function fetchMyNotifications() {
   return response.data
 }
 
+export async function fetchMyReviews() {
+  const response = await api.get('/me/reviews')
+  return response.data
+}
+
+export async function createMyReview(payload) {
+  const response = await api.post('/me/reviews', payload)
+  return response.data
+}
+
 export async function markNotificationRead(id) {
   const response = await api.post(`/me/notifications/${id}/read`)
   return response.data
@@ -131,6 +141,21 @@ export async function changeUserStatus(id, status) {
 
 export async function fetchInstructors(admin = false) {
   const response = await api.get(admin ? '/admin/instructors' : '/instructors')
+  return response.data
+}
+
+export async function fetchInstructorDashboard() {
+  const response = await api.get('/instructor/dashboard')
+  return response.data
+}
+
+export async function fetchInstructorReviews() {
+  const response = await api.get('/instructor/reviews')
+  return response.data
+}
+
+export async function replyToInstructorReview(id, body) {
+  const response = await api.post(`/instructor/reviews/${id}/replies`, { body })
   return response.data
 }
 
@@ -191,6 +216,16 @@ export async function grantUserPass(payload) {
 
 export async function fetchAdminPassOrders() {
   const response = await api.get('/admin/pass-orders')
+  return response.data
+}
+
+export async function fetchAdminReviews() {
+  const response = await api.get('/admin/reviews')
+  return response.data
+}
+
+export async function replyToAdminReview(id, body) {
+  const response = await api.post(`/admin/reviews/${id}/replies`, { body })
   return response.data
 }
 

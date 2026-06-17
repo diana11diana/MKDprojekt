@@ -55,10 +55,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/instructors/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/classes/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/instructor/**").hasAnyRole("INSTRUCTOR", "ADMIN")
                         .requestMatchers(
                                 "/api/v1/me/passes",
                                 "/api/v1/me/pass-orders/**",
                                 "/api/v1/me/notifications/**",
+                                "/api/v1/me/reviews",
+                                "/api/v1/me/reviews/**",
                                 "/api/v1/me/reservations",
                                 "/api/v1/me/waitlist",
                                 "/api/v1/classes/*/reservations",

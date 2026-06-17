@@ -25,10 +25,10 @@ public class PassLedgerEntry {
     @Column(nullable = false, length = 30)
     private LedgerEntryType type;
 
-    @Column(name = "visit_delta", nullable = false)
-    private int visitDelta;
+    @Column(name = "visit_delta", columnDefinition = "smallint", nullable = false)
+    private Short visitDelta;
 
-    @Column(name = "balance_after")
+    @Column(name = "balance_after", columnDefinition = "smallint unsigned", nullable = false)
     private Integer balanceAfter;
 
     @Column(length = 500)
@@ -50,7 +50,7 @@ public class PassLedgerEntry {
         this.userPass = userPass;
         this.reservation = reservation;
         this.type = type;
-        this.visitDelta = visitDelta;
+        this.visitDelta = (short) visitDelta;
         this.balanceAfter = userPass.getRemainingVisits();
         this.reason = reason;
     }
@@ -60,4 +60,3 @@ public class PassLedgerEntry {
         createdAt = Instant.now();
     }
 }
-

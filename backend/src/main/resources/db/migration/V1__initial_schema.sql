@@ -45,7 +45,6 @@ CREATE TABLE reservations (
 INSERT INTO class_sessions
     (title, description, dance_style, level, instructor_name, capacity, booked_places, start_at, duration_minutes, status)
 VALUES
-    ('Salsa Start', 'Основы сальсы для начинающих', 'Salsa', 'BEGINNER', 'Анна Ковальска', 16, 9, UTC_TIMESTAMP(6) + INTERVAL 1 DAY, 60, 'PUBLISHED'),
-    ('Bachata Flow', 'Пластика и музыкальность', 'Bachata', 'INTERMEDIATE', 'Марк Новак', 14, 12, UTC_TIMESTAMP(6) + INTERVAL 2 DAY, 75, 'PUBLISHED'),
-    ('Contemporary', 'Техника contemporary для всех уровней', 'Contemporary', 'ALL', 'Диана Вишневская', 18, 6, UTC_TIMESTAMP(6) + INTERVAL 3 DAY, 90, 'PUBLISHED');
-
+    ('Salsa Start', 'Podstawy salsy dla początkujących', 'Salsa', 'BEGINNER', 'Anna Kowalska', 16, 9, UTC_TIMESTAMP(6) + INTERVAL 1 DAY, 60, 'PUBLISHED'),
+    ('Bachata Flow', 'Plastyka ruchu i muzykalność', 'Bachata', 'INTERMEDIATE', 'Marek Nowak', 14, 12, UTC_TIMESTAMP(6) + INTERVAL 2 DAY, 75, 'PUBLISHED'),
+    ('Contemporary', 'Technika contemporary dla wszystkich poziomów', 'Contemporary', 'ALL', 'Diana Wiśniewska', 18, 6, UTC_TIMESTAMP(6) + INTERVAL 3 DAY, 90, 'PUBLISHED');
