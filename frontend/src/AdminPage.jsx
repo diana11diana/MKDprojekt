@@ -35,6 +35,7 @@ import {
   createInstructor,
   createPassType,
   fetchAdminClasses,
+  fetchAdminInstructorDashboard,
   fetchAdminPassOrders,
   fetchAdminPassTypes,
   fetchAdminReviews,
@@ -65,6 +66,7 @@ const userStatusLabels = {
 const classStatusLabels = {
   DRAFT: 'Szkic',
   PUBLISHED: 'Opublikowane',
+  IN_PROGRESS: 'W trakcie',
   CANCELLED: 'Anulowane',
   COMPLETED: 'Zakończone',
 }
@@ -129,6 +131,11 @@ export default function AdminPage() {
   const [passTypes, setPassTypes] = useState([])
   const [passOrders, setPassOrders] = useState([])
   const [reviews, setReviews] = useState([])
+  const [selectedInstructorId, setSelectedInstructorId] = useState(null)
+  const [selectedInstructorDashboard, setSelectedInstructorDashboard] = useState(null)
+  const [instructorDashboardLoading, setInstructorDashboardLoading] = useState(false)
+  const [instructorDashboardError, setInstructorDashboardError] = useState('')
+  const [adminDataVersion, setAdminDataVersion] = useState(0)
   const [error, setError] = useState('')
   const [instructorDialog, setInstructorDialog] = useState(false)
   const [classDialog, setClassDialog] = useState(false)
@@ -160,6 +167,7 @@ export default function AdminPage() {
       setPassTypes(passTypeData)
       setPassOrders(passOrderData)
       setReviews(reviewData)
+      setAdminDataVersion((current) => current + 1)
     } catch (requestError) {
       setError(getApiError(requestError, 'Nie udało się załadować danych administracyjnych'))
     }
@@ -170,6 +178,51 @@ export default function AdminPage() {
       load()
     }
   }, [user])
+
+  useEffect(() => {
+    if (!instructors.length) {
+      setSelectedInstructorId(null)
+      setSelectedInstructorDashboard(null)
+      setInstructorDashboardError('')
+      return
+    }
+
+    setSelectedInstructorId((current) =>
+      instructors.some((item) => item.id === current) ? current : instructors[0].id)
+  }, [instructors])
+
+  useEffect(() => {
+    if (user?.role !== 'ADMIN' || tab !== 1 || !selectedInstructorId) {
+      return
+    }
+
+    let active = true
+    setInstructorDashboardLoading(true)
+    setInstructorDashboardError('')
+    setSelectedInstructorDashboard(null)
+
+    fetchAdminInstructorDashboard(selectedInstructorId)
+      .then((data) => {
+        if (active) {
+          setSelectedInstructorDashboard(data)
+        }
+      })
+      .catch((requestError) => {
+        if (!active) {
+          return
+        }
+        setInstructorDashboardError(getApiError(requestError, 'Nie udało się załadować grafiku instruktora'))
+      })
+      .finally(() => {
+        if (active) {
+          setInstructorDashboardLoading(false)
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [adminDataVersion, selectedInstructorId, tab, user])
 
   const instructorCandidates = useMemo(() => {
     const assigned = new Set(instructors.map((item) => item.userId))
@@ -375,7 +428,21 @@ export default function AdminPage() {
         </Tabs>
         <Box sx={{ p: { xs: 1, md: 3 } }}>
           {tab === 0 && <UsersTable users={users} mutateUser={mutateUser} />}
-          {tab === 1 && <InstructorsTable instructors={instructors} toggle={toggleInstructor} />}
+          {tab === 1 && (
+            <Stack spacing={3}>
+              <InstructorsTable
+                instructors={instructors}
+                toggle={toggleInstructor}
+                selectedInstructorId={selectedInstructorId}
+                selectInstructor={setSelectedInstructorId}
+              />
+              <InstructorDashboardPanel
+                dashboard={selectedInstructorDashboard}
+                loading={instructorDashboardLoading}
+                error={instructorDashboardError}
+              />
+            </Stack>
+          )}
           {tab === 2 && <ClassesTable classes={classes} transition={transitionClass} />}
           {tab === 3 && (
             <Stack spacing={4}>
@@ -566,7 +633,7 @@ function UsersTable({ users, mutateUser }) {
   )
 }
 
-function InstructorsTable({ instructors, toggle }) {
+function InstructorsTable({ instructors, toggle, selectedInstructorId, selectInstructor }) {
   return (
     <TableContainer>
       <Table>
@@ -576,22 +643,165 @@ function InstructorsTable({ instructors, toggle }) {
             <TableCell>Specjalizacja</TableCell>
             <TableCell>Opis</TableCell>
             <TableCell>Profil publiczny</TableCell>
+            <TableCell>Panel</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {instructors.map((item) => (
-            <TableRow key={item.id}>
+            <TableRow key={item.id} hover selected={selectedInstructorId === item.id}>
               <TableCell>{item.firstName} {item.lastName}</TableCell>
               <TableCell>{item.specialization}</TableCell>
               <TableCell>{item.description || '—'}</TableCell>
               <TableCell>
                 <Switch checked={item.publicProfile} onChange={() => toggle(item)} />
               </TableCell>
+              <TableCell>
+                <Button
+                  size="small"
+                  variant={selectedInstructorId === item.id ? 'contained' : 'outlined'}
+                  onClick={() => selectInstructor(item.id)}
+                >
+                  {selectedInstructorId === item.id ? 'Wybrany' : 'Podgląd'}
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </TableContainer>
+  )
+}
+
+function InstructorDashboardPanel({ dashboard, loading, error }) {
+  if (loading) {
+    return (
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <Typography color="text.secondary">Ładowanie grafiku instruktora...</Typography>
+      </Paper>
+    )
+  }
+
+  if (error) {
+    return <Alert severity="error">{error}</Alert>
+  }
+
+  if (!dashboard) {
+    return (
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <Typography color="text.secondary">Wybierz instruktora, aby zobaczyć jego grafik i klientów.</Typography>
+      </Paper>
+    )
+  }
+
+  const activeClasses = dashboard.classes.filter((item) => item.status !== 'CANCELLED')
+  const participantCount = activeClasses.reduce((sum, item) => sum + item.participants.length, 0)
+  const waitlistCount = activeClasses.reduce((sum, item) => sum + item.waitingList.length, 0)
+
+  return (
+    <Stack spacing={2}>
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <Typography variant="h5">
+          {dashboard.firstName} {dashboard.lastName}
+        </Typography>
+        <Typography color="text.secondary" sx={{ mt: 0.75 }}>
+          {dashboard.specialization || 'Bez wskazanej specjalizacji'}
+        </Typography>
+        {dashboard.description && (
+          <Typography sx={{ mt: 1.5 }}>{dashboard.description}</Typography>
+        )}
+        <Typography color="text.secondary" sx={{ mt: 1.5 }}>
+          Zajęcia: {dashboard.classes.length} · zapisani klienci: {participantCount} · lista oczekujących: {waitlistCount}
+        </Typography>
+      </Paper>
+
+      {dashboard.classes.length === 0 ? (
+        <Paper variant="outlined" sx={{ p: 3 }}>
+          <Typography color="text.secondary">Ten instruktor nie ma jeszcze przypisanych zajęć.</Typography>
+        </Paper>
+      ) : (
+        dashboard.classes.map((item) => (
+          <Paper key={item.id} variant="outlined" sx={{ p: 2.5 }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" gap={2}>
+              <Box>
+                <Typography variant="h6">{item.title}</Typography>
+                <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                  {new Date(item.startAt).toLocaleString('pl-PL')} · {item.danceStyle} · {levelLabels[item.level] || item.level}
+                </Typography>
+                {item.description && (
+                  <Typography sx={{ mt: 1 }}>{item.description}</Typography>
+                )}
+              </Box>
+              <Box>
+                <Typography fontWeight={700}>{classStatusLabels[item.status] || item.status}</Typography>
+                <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
+                  Zapisani: {item.bookedPlaces}/{item.capacity}
+                </Typography>
+                <Typography color="text.secondary" variant="body2">
+                  Wolne miejsca: {item.availablePlaces}
+                </Typography>
+                <Typography color="text.secondary" variant="body2">
+                  Lista oczekujących: {item.waitlistCount}
+                </Typography>
+              </Box>
+            </Stack>
+
+            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} sx={{ mt: 2 }}>
+              <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
+                <Typography fontWeight={700}>Zapisani klienci</Typography>
+                {item.participants.length === 0 ? (
+                  <Typography color="text.secondary" sx={{ mt: 1.5 }}>
+                    Brak zapisanych klientów.
+                  </Typography>
+                ) : (
+                  <Stack spacing={1.25} sx={{ mt: 1.5 }}>
+                    {item.participants.map((participant) => (
+                      <Box key={participant.reservationId}>
+                        <Typography fontWeight={600}>{participant.firstName} {participant.lastName}</Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {participant.email}{participant.phone ? ` · ${participant.phone}` : ''}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 0.5 }}>
+                          {participant.passName ? `Karnet: ${participant.passName}` : 'Bez przypisanego karnetu'}
+                          {participant.bookedAt
+                            ? ` · zapis: ${new Date(participant.bookedAt).toLocaleString('pl-PL')}`
+                            : ''}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
+              </Paper>
+
+              <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
+                <Typography fontWeight={700}>Lista oczekujących</Typography>
+                {item.waitingList.length === 0 ? (
+                  <Typography color="text.secondary" sx={{ mt: 1.5 }}>
+                    Lista oczekujących jest pusta.
+                  </Typography>
+                ) : (
+                  <Stack spacing={1.25} sx={{ mt: 1.5 }}>
+                    {item.waitingList.map((entry) => (
+                      <Box key={entry.id}>
+                        <Typography fontWeight={600}>{entry.firstName} {entry.lastName}</Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {entry.email}{entry.phone ? ` · ${entry.phone}` : ''}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 0.5 }}>
+                          Pozycja {entry.position}
+                          {entry.joinedAt
+                            ? ` · dołączono: ${new Date(entry.joinedAt).toLocaleString('pl-PL')}`
+                            : ''}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
+              </Paper>
+            </Stack>
+          </Paper>
+        ))
+      )}
+    </Stack>
   )
 }
 
@@ -622,7 +832,7 @@ function ClassesTable({ classes, transition }) {
                   {item.status === 'DRAFT' && (
                     <Button size="small" onClick={() => transition(item.id, 'publish')}>Opublikuj</Button>
                   )}
-                  {!['CANCELLED', 'COMPLETED'].includes(item.status) && (
+                  {!['CANCELLED', 'COMPLETED', 'IN_PROGRESS'].includes(item.status) && (
                     <Button size="small" color="error" onClick={() => transition(item.id, 'cancel')}>Anuluj</Button>
                   )}
                 </Stack>

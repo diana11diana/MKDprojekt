@@ -21,7 +21,14 @@ import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded'
 import QueueRoundedIcon from '@mui/icons-material/QueueRounded'
 import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded'
 import { Navigate, useLocation } from 'react-router-dom'
-import { fetchInstructorDashboard, fetchInstructorReviews, getApiError, replyToInstructorReview } from './api'
+import {
+  confirmInstructorClassStart,
+  fetchInstructorDashboard,
+  fetchInstructorReviews,
+  getApiError,
+  replyToInstructorReview,
+  updateInstructorReservationStatus,
+} from './api'
 import { useAuth } from './auth-context'
 
 const levelLabels = {
@@ -34,8 +41,15 @@ const levelLabels = {
 const classStatusLabels = {
   DRAFT: 'Szkic',
   PUBLISHED: 'Opublikowane',
+  IN_PROGRESS: 'W trakcie',
   CANCELLED: 'Anulowane',
   COMPLETED: 'Zakończone',
+}
+
+const reservationStatusLabels = {
+  CONFIRMED: 'Do sprawdzenia',
+  ATTENDED: 'Obecny',
+  NO_SHOW: 'Nieobecny',
 }
 
 const replyRoleLabels = {
@@ -63,6 +77,28 @@ function isSameDay(value, now) {
   return date.getFullYear() === now.getFullYear()
     && date.getMonth() === now.getMonth()
     && date.getDate() === now.getDate()
+}
+
+function getStartConfirmationState(item, now) {
+  const startTime = new Date(item.startAt).getTime()
+  const confirmFrom = startTime - 15 * 60 * 1000
+  const autoCancelAt = startTime + 5 * 60 * 1000
+
+  return {
+    canConfirm: item.status === 'PUBLISHED' && now >= confirmFrom && now <= autoCancelAt,
+    beforeStart: now < startTime,
+    minutesToAutoCancel: Math.max(0, Math.ceil((autoCancelAt - now) / 60000)),
+  }
+}
+
+function getAttendanceChipColor(status) {
+  if (status === 'ATTENDED') {
+    return 'success'
+  }
+  if (status === 'NO_SHOW') {
+    return 'error'
+  }
+  return 'warning'
 }
 
 function SummaryCard({ icon, label, value, helper }) {
@@ -106,7 +142,7 @@ function ReviewReplies({ replies }) {
   )
 }
 
-function PeopleList({ title, items, emptyText, renderMeta }) {
+function PeopleList({ title, items, emptyText, renderMeta, renderActions }) {
   return (
     <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
       <Typography variant="h6">{title}</Typography>
@@ -124,6 +160,7 @@ function PeopleList({ title, items, emptyText, renderMeta }) {
               <Typography variant="body2" sx={{ mt: 0.5 }}>
                 {renderMeta(item)}
               </Typography>
+              {renderActions && <Box sx={{ mt: 1.25 }}>{renderActions(item)}</Box>}
             </Box>
           ))}
         </Stack>
@@ -132,7 +169,17 @@ function PeopleList({ title, items, emptyText, renderMeta }) {
   )
 }
 
-function InstructorClassCard({ item }) {
+function InstructorClassCard({
+  item,
+  now,
+  startingClassId,
+  attendanceSubmittingKey,
+  onConfirmStart,
+  onAttendanceChange,
+}) {
+  const startConfirmationState = getStartConfirmationState(item, now)
+  const attendanceEnabled = item.status === 'IN_PROGRESS'
+
   return (
     <Card variant="outlined" sx={cardSx}>
       <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
@@ -175,6 +222,34 @@ function InstructorClassCard({ item }) {
           </Box>
         </Stack>
 
+        {startConfirmationState.canConfirm && (
+          <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: 'rgba(179, 136, 103, 0.05)' }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" gap={2}>
+              <Box>
+                <Typography fontWeight={700}>Gotowość do rozpoczęcia</Typography>
+                <Typography color="text.secondary" variant="body2" sx={{ mt: 0.75 }}>
+                  {startConfirmationState.beforeStart
+                    ? 'Możesz już potwierdzić rozpoczęcie zajęć, żeby od razu sprawdzić obecność.'
+                    : `Potwierdź rozpoczęcie w ciągu ${startConfirmationState.minutesToAutoCancel} min, inaczej zajęcia zostaną automatycznie anulowane.`}
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                onClick={() => onConfirmStart(item.id)}
+                disabled={startingClassId === item.id}
+              >
+                Potwierdź rozpoczęcie
+              </Button>
+            </Stack>
+          </Paper>
+        )}
+
+        {attendanceEnabled && (
+          <Alert severity="success" sx={{ mt: 2 }}>
+            Zajęcia zostały rozpoczęte. Możesz teraz sprawdzić obecność wszystkich zapisanych klientów.
+          </Alert>
+        )}
+
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12} md={7}>
             <PeopleList
@@ -187,6 +262,52 @@ function InstructorClassCard({ item }) {
                   {participant.bookedAt ? ` · zapis: ${new Date(participant.bookedAt).toLocaleString('pl-PL')}` : ''}
                 </>
               )}
+              renderActions={(participant) => {
+                const actionKey = `${item.id}:${participant.reservationId}`
+                const loading = attendanceSubmittingKey === actionKey
+
+                return (
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+                    <Chip
+                      size="small"
+                      color={getAttendanceChipColor(participant.status)}
+                      label={reservationStatusLabels[participant.status] || participant.status}
+                    />
+                    {attendanceEnabled && (
+                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        <Button
+                          size="small"
+                          color="success"
+                          variant={participant.status === 'ATTENDED' ? 'contained' : 'outlined'}
+                          disabled={loading}
+                          onClick={() => onAttendanceChange(item.id, participant.reservationId, 'ATTENDED')}
+                        >
+                          Obecny
+                        </Button>
+                        <Button
+                          size="small"
+                          color="error"
+                          variant={participant.status === 'NO_SHOW' ? 'contained' : 'outlined'}
+                          disabled={loading}
+                          onClick={() => onAttendanceChange(item.id, participant.reservationId, 'NO_SHOW')}
+                        >
+                          Nieobecny
+                        </Button>
+                        {participant.status !== 'CONFIRMED' && (
+                          <Button
+                            size="small"
+                            variant="text"
+                            disabled={loading}
+                            onClick={() => onAttendanceChange(item.id, participant.reservationId, 'CONFIRMED')}
+                          >
+                            Wyczyść
+                          </Button>
+                        )}
+                      </Stack>
+                    )}
+                  </Stack>
+                )
+              }}
             />
           </Grid>
           <Grid item xs={12} md={5}>
@@ -214,9 +335,12 @@ export default function InstructorPage() {
   const [dashboard, setDashboard] = useState(null)
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [now, setNow] = useState(() => Date.now())
   const [error, setError] = useState('')
   const [replyDrafts, setReplyDrafts] = useState({})
   const [replySubmittingId, setReplySubmittingId] = useState(null)
+  const [startingClassId, setStartingClassId] = useState(null)
+  const [attendanceSubmittingKey, setAttendanceSubmittingKey] = useState(null)
 
   useEffect(() => {
     if (!user || !['INSTRUCTOR', 'ADMIN'].includes(user.role)) {
@@ -238,26 +362,49 @@ export default function InstructorPage() {
       .finally(() => setLoading(false))
   }, [user])
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    if (!user || !['INSTRUCTOR', 'ADMIN'].includes(user.role)) {
+      return
+    }
+
+    const refreshTimer = window.setInterval(() => {
+      fetchInstructorDashboard()
+        .then((dashboardData) => setDashboard(dashboardData))
+        .catch(() => {})
+    }, 30000)
+
+    return () => window.clearInterval(refreshTimer)
+  }, [user])
+
   const stats = useMemo(() => {
     const classes = dashboard?.classes || []
-    const now = new Date()
+    const currentDate = new Date(now)
     const upcoming = classes
-      .filter((item) => item.status !== 'CANCELLED' && new Date(item.startAt).getTime() >= now.getTime())
+      .filter((item) =>
+        item.status !== 'CANCELLED'
+        && (item.status === 'IN_PROGRESS' || new Date(item.startAt).getTime() >= now))
       .sort((left, right) => new Date(left.startAt) - new Date(right.startAt))
-    const today = upcoming.filter((item) => isSameDay(item.startAt, now))
+    const today = upcoming.filter((item) => isSameDay(item.startAt, currentDate))
 
     return {
       classes,
       upcoming,
       archive: classes
-        .filter((item) => item.status === 'CANCELLED' || new Date(item.startAt).getTime() < now.getTime())
+        .filter((item) =>
+          item.status === 'CANCELLED'
+          || (item.status !== 'IN_PROGRESS' && new Date(item.startAt).getTime() < now))
         .sort((left, right) => new Date(right.startAt) - new Date(left.startAt)),
       todayCount: today.length,
       upcomingCount: upcoming.length,
       participantCount: upcoming.reduce((sum, item) => sum + item.participants.length, 0),
       waitlistCount: upcoming.reduce((sum, item) => sum + item.waitingList.length, 0),
     }
-  }, [dashboard])
+  }, [dashboard, now])
 
   const reviewStats = useMemo(() => {
     if (!reviews.length) {
@@ -303,6 +450,45 @@ export default function InstructorPage() {
     }
   }
 
+  const applyClassUpdate = (updatedClass) => {
+    setDashboard((current) => {
+      if (!current) {
+        return current
+      }
+      return {
+        ...current,
+        classes: current.classes.map((item) => item.id === updatedClass.id ? updatedClass : item),
+      }
+    })
+  }
+
+  const confirmStart = async (classId) => {
+    setError('')
+    setStartingClassId(classId)
+    try {
+      const updated = await confirmInstructorClassStart(classId)
+      applyClassUpdate(updated)
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Nie udało się potwierdzić rozpoczęcia zajęć'))
+    } finally {
+      setStartingClassId(null)
+    }
+  }
+
+  const changeAttendance = async (classId, reservationId, status) => {
+    const key = `${classId}:${reservationId}`
+    setError('')
+    setAttendanceSubmittingKey(key)
+    try {
+      const updated = await updateInstructorReservationStatus(classId, reservationId, status)
+      applyClassUpdate(updated)
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Nie udało się zapisać obecności'))
+    } finally {
+      setAttendanceSubmittingKey(null)
+    }
+  }
+
   if (initializing) {
     return <Box textAlign="center" py={12}><CircularProgress /></Box>
   }
@@ -327,7 +513,7 @@ export default function InstructorPage() {
             Panel instruktora
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
-            Twoje zajęcia, zapisani klienci i lista oczekujących w jednym miejscu.
+            Twoje zajęcia, zapisani klienci, potwierdzenie startu i sprawdzanie obecności w jednym miejscu.
           </Typography>
         </Box>
 
@@ -369,9 +555,9 @@ export default function InstructorPage() {
               <Grid item xs={12} md={3}>
                 <SummaryCard
                   icon={<AccessTimeRoundedIcon fontSize="large" />}
-                  label="Nadchodzące zajęcia"
+                  label="Najbliższe / w toku"
                   value={stats.upcomingCount}
-                  helper="Wszystkie przyszłe zajęcia poza anulowanymi."
+                  helper="Najbliższe zajęcia i te, które już właśnie prowadzisz."
                 />
               </Grid>
               <Grid item xs={12} md={3}>
@@ -379,7 +565,7 @@ export default function InstructorPage() {
                   icon={<GroupsRoundedIcon fontSize="large" />}
                   label="Zapisani klienci"
                   value={stats.participantCount}
-                  helper="Liczba klientów zapisanych na przyszłe zajęcia."
+                  helper="Liczba klientów przypisanych do najbliższych i trwających zajęć."
                 />
               </Grid>
               <Grid item xs={12} md={3}>
@@ -404,7 +590,7 @@ export default function InstructorPage() {
               <Box>
                 <Typography variant="h4">Najbliższe zajęcia</Typography>
                 <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                  Tu od razu widzisz, ile osób przyjdzie i kto czeka na miejsce.
+                  Tu od razu widzisz, ile osób przyjdzie, możesz potwierdzić start i sprawdzić obecność.
                 </Typography>
               </Box>
               {stats.upcoming.length === 0 ? (
@@ -412,7 +598,17 @@ export default function InstructorPage() {
                   <Typography color="text.secondary">Nie masz jeszcze zaplanowanych zajęć.</Typography>
                 </Paper>
               ) : (
-                stats.upcoming.map((item) => <InstructorClassCard key={item.id} item={item} />)
+                stats.upcoming.map((item) => (
+                  <InstructorClassCard
+                    key={item.id}
+                    item={item}
+                    now={now}
+                    startingClassId={startingClassId}
+                    attendanceSubmittingKey={attendanceSubmittingKey}
+                    onConfirmStart={confirmStart}
+                    onAttendanceChange={changeAttendance}
+                  />
+                ))
               )}
             </Stack>
 
@@ -424,7 +620,17 @@ export default function InstructorPage() {
                     Ostatnie zajęcia w historii wraz ze stanem zapisów.
                   </Typography>
                 </Box>
-                {stats.archive.map((item) => <InstructorClassCard key={item.id} item={item} />)}
+                {stats.archive.map((item) => (
+                  <InstructorClassCard
+                    key={item.id}
+                    item={item}
+                    now={now}
+                    startingClassId={startingClassId}
+                    attendanceSubmittingKey={attendanceSubmittingKey}
+                    onConfirmStart={confirmStart}
+                    onAttendanceChange={changeAttendance}
+                  />
+                ))}
               </Stack>
             )}
 

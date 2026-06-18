@@ -16,9 +16,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class InstructorService {
+
+    private static final Set<ReservationStatus> DASHBOARD_RESERVATION_STATUSES = Set.of(
+            ReservationStatus.CONFIRMED,
+            ReservationStatus.ATTENDED,
+            ReservationStatus.NO_SHOW
+    );
 
     private final InstructorProfileRepository profileRepository;
     private final UserRepository userRepository;
@@ -62,17 +69,19 @@ public class InstructorService {
                 .orElseThrow(() -> new AuthException(HttpStatus.NOT_FOUND, "User not found"));
         InstructorProfile profile = profileRepository.findByUserId(user.getId()).orElse(null);
         if (profile == null) {
-            return new InstructorDashboardResponse(
-                    user.getId(),
-                    null,
-                    user.getFirstName(),
-                    user.getLastName(),
-                    null,
-                    null,
-                    List.of()
-            );
+            return emptyDashboard(user);
         }
 
+        return buildDashboard(user, profile);
+    }
+
+    @Transactional(readOnly = true)
+    public InstructorDashboardResponse dashboardForAdmin(Long instructorId) {
+        InstructorProfile profile = getProfile(instructorId);
+        return buildDashboard(profile.getUser(), profile);
+    }
+
+    private InstructorDashboardResponse buildDashboard(User user, InstructorProfile profile) {
         List<InstructorClassResponse> classes = classSessionRepository
                 .findByInstructorIdOrderByStartAtAsc(profile.getId())
                 .stream()
@@ -80,7 +89,7 @@ public class InstructorService {
                         session,
                         reservationRepository.findInstructorParticipants(
                                         session.getId(),
-                                        ReservationStatus.CONFIRMED
+                                        DASHBOARD_RESERVATION_STATUSES
                                 )
                                 .stream()
                                 .map(InstructorParticipantResponse::from)
@@ -103,6 +112,18 @@ public class InstructorService {
                 profile.getSpecialization(),
                 profile.getDescription(),
                 classes
+        );
+    }
+
+    private InstructorDashboardResponse emptyDashboard(User user) {
+        return new InstructorDashboardResponse(
+                user.getId(),
+                null,
+                user.getFirstName(),
+                user.getLastName(),
+                null,
+                null,
+                List.of()
         );
     }
 

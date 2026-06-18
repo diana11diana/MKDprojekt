@@ -73,6 +73,18 @@ public class Reservation {
         cancelledAt = Instant.now();
     }
 
+    public void markAttended() {
+        status = ReservationStatus.ATTENDED;
+    }
+
+    public void markNoShow() {
+        status = ReservationStatus.NO_SHOW;
+    }
+
+    public void resetAttendance() {
+        status = ReservationStatus.CONFIRMED;
+    }
+
     public boolean isActive() {
         return status == ReservationStatus.CONFIRMED;
     }
@@ -101,4 +113,3 @@ public class Reservation {
         return createdAt;
     }
 }
-

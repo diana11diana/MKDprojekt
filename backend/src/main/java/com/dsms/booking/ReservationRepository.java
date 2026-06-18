@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,11 +20,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             left join fetch reservation.userPass userPass
             left join fetch userPass.passType passType
             where reservation.classSession.id = :classSessionId
-              and reservation.status = :status
+              and reservation.status in :statuses
             order by user.lastName asc, user.firstName asc
             """)
     List<Reservation> findInstructorParticipants(
             @Param("classSessionId") Long classSessionId,
-            @Param("status") ReservationStatus status
+            @Param("statuses") Collection<ReservationStatus> statuses
     );
 }

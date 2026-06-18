@@ -53,6 +53,7 @@ public class ClassSessionAdminService {
     public ClassSessionResponse update(Long id, ClassSessionRequest request) {
         ClassSession session = getSession(id);
         if (session.getStatus() == ClassStatus.CANCELLED
+                || session.getStatus() == ClassStatus.IN_PROGRESS
                 || session.getStatus() == ClassStatus.COMPLETED) {
             throw new AuthException(HttpStatus.CONFLICT, "This class can no longer be edited");
         }
@@ -89,6 +90,7 @@ public class ClassSessionAdminService {
     public ClassSessionResponse cancel(Long id) {
         ClassSession session = getSession(id);
         if (session.getStatus() == ClassStatus.CANCELLED
+                || session.getStatus() == ClassStatus.IN_PROGRESS
                 || session.getStatus() == ClassStatus.COMPLETED) {
             throw new AuthException(HttpStatus.CONFLICT, "Class cannot be cancelled");
         }
@@ -109,4 +111,3 @@ public class ClassSessionAdminService {
         return description == null || description.isBlank() ? null : description.trim();
     }
 }
-

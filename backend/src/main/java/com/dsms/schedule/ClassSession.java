@@ -43,6 +43,9 @@ public class ClassSession {
     @Column(name = "duration_minutes", nullable = false)
     private int durationMinutes;
 
+    @Column(name = "started_at")
+    private Instant startedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ClassStatus status;
@@ -118,6 +121,11 @@ public class ClassSession {
         status = ClassStatus.PUBLISHED;
     }
 
+    public void start(Instant actualStartAt) {
+        startedAt = actualStartAt;
+        status = ClassStatus.IN_PROGRESS;
+    }
+
     public void cancel() {
         status = ClassStatus.CANCELLED;
     }
@@ -181,6 +189,10 @@ public class ClassSession {
 
     public int getDurationMinutes() {
         return durationMinutes;
+    }
+
+    public Instant getStartedAt() {
+        return startedAt;
     }
 
     public ClassStatus getStatus() {

@@ -149,6 +149,21 @@ export async function fetchInstructorDashboard() {
   return response.data
 }
 
+export async function confirmInstructorClassStart(classId) {
+  const response = await api.post(`/instructor/classes/${classId}/start`)
+  return response.data
+}
+
+export async function updateInstructorReservationStatus(classId, reservationId, status) {
+  const response = await api.patch(`/instructor/classes/${classId}/reservations/${reservationId}`, { status })
+  return response.data
+}
+
+export async function fetchAdminInstructorDashboard(id) {
+  const response = await api.get(`/admin/instructors/${id}/dashboard`)
+  return response.data
+}
+
 export async function fetchInstructorReviews() {
   const response = await api.get('/instructor/reviews')
   return response.data

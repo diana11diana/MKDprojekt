@@ -32,6 +32,11 @@ public final class InstructorDtos {
     ) {
     }
 
+    public record UpdateAttendanceRequest(
+            @NotNull ReservationStatus status
+    ) {
+    }
+
     public record InstructorResponse(
             Long id,
             Long userId,
@@ -74,6 +79,7 @@ public final class InstructorDtos {
             String danceStyle,
             ClassLevel level,
             Instant startAt,
+            Instant startedAt,
             int durationMinutes,
             int capacity,
             int bookedPlaces,
@@ -95,6 +101,7 @@ public final class InstructorDtos {
                     session.getDanceStyle(),
                     session.getLevel(),
                     session.getStartAt(),
+                    session.getStartedAt(),
                     session.getDurationMinutes(),
                     session.getCapacity(),
                     session.getBookedPlaces(),
