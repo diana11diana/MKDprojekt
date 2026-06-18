@@ -7,7 +7,7 @@ wdrożenia odpowiedniego modułu obowiązują założenia przyjęte w analizie w
 |---|---|---|
 | D-01 | Ile oddziałów ma obsługiwać system? | Jeden oddział |
 | D-02 | W jakim języku ma działać interfejs? | Tylko polski |
-| D-03 | Jakiej waluty używamy? | PLN |
+| D-03 | Jakiej waluty używamy? | PLN  |
 | D-04 | Jaki jest czas bezpłatnej anulacji rezerwacji? | 12 godzin |
 | D-05 | Czy wejście przepada przy nieobecności? | Tak |
 | D-06 | Czy klient może opłacić pojedyncze zajęcia bez karnetu? | Nie |
