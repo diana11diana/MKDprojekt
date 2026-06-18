@@ -25,6 +25,7 @@ class AuthControllerSecurityTest {
     @MockitoBean
     private UserRepository userRepository;
 
+
     @MockitoBean
     private JwtService jwtService;
 
